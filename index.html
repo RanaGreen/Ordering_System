@@ -160,11 +160,18 @@
       border-radius: 20px;
       font-size: 14px;
       cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .room-tag:hover {
+      background: #d9ecff;
+      transform: translateY(-2px);
     }
 
     .room-tag.active {
       background: #409eff;
       color: white;
+      box-shadow: 0 2px 5px rgba(64, 158, 255, 0.3);
     }
 
     .admin-controls {
@@ -180,6 +187,12 @@
       border-radius: 6px;
       font-size: 14px;
       cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .admin-controls button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     .btn-primary {
@@ -190,6 +203,16 @@
     .btn-secondary {
       background: #f0f0f0;
       color: #333;
+    }
+
+    .empty-room {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 14px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -206,6 +229,12 @@
   const role = params.get("role");
   
   const container = document.getElementById("container");
+  
+  // 定义所有16个包厢
+  const allRooms = [
+    "V111", "V222", "V333", "V04", "V555", "V666", "V777", "V888",
+    "V999", "V10", "U1", "U2", "U3", "U5", "U6", "U7"
+  ];
   
   // 判断是否为老板端
   const isAdmin = role === "admin";
@@ -230,16 +259,19 @@
       <div class="total" id="totalPrice">合计：0 元</div>
     `;
     
-    // 原有客户端逻辑
+    // 检查包厢是否有效
+    const isValidRoom = allRooms.includes(room);
     document.getElementById("roomInfo").innerText =
-      room ? `当前包厢：${room}` : "未识别包厢";
+      isValidRoom ? `当前包厢：${room}` : "未识别包厢 (请使用有效包厢号)";
 
     // 商品配置
     const products = [
       { id: 1, name: "可乐", price: 5 },
       { id: 2, name: "雪碧", price: 5 },
       { id: 3, name: "矿泉水", price: 3 },
-      { id: 4, name: "泡面", price: 8 }
+      { id: 4, name: "泡面", price: 8 },
+      { id: 5, name: "薯片", price: 6 },
+      { id: 6, name: "啤酒", price: 10 }
     ];
 
     // 当前订单
@@ -316,39 +348,22 @@
     // 老板端管理系统
     container.innerHTML = `
       <div class="admin-title">九易点单系统 - 老板端</div>
-      <div class="admin-room" id="roomInfo">老板端管理面板</div>
+      <div class="admin-room" id="roomInfo">
+        <div>老板端管理面板</div>
+        <div style="font-size:14px; color:#666; margin-top:5px;">共 ${allRooms.length} 个包厢</div>
+      </div>
       
       <div class="admin-section-title">包厢列表</div>
       <div class="room-list" id="roomList">
-        <div class="room-tag active">所有包厢</div>
-        <div class="room-tag">A01</div>
-        <div class="room-tag">A02</div>
-        <div class="room-tag">A03</div>
-        <div class="room-tag">B01</div>
-        <div class="room-tag">B02</div>
+        <!-- 包厢标签将动态生成 -->
       </div>
       
       <div class="admin-section-title">今日订单汇总</div>
       <div class="admin-summary" id="orderSummary">
-        <div class="admin-order-item">
-          <span>可乐</span>
-          <span>15 杯</span>
-        </div>
-        <div class="admin-order-item">
-          <span>雪碧</span>
-          <span>12 杯</span>
-        </div>
-        <div class="admin-order-item">
-          <span>矿泉水</span>
-          <span>8 瓶</span>
-        </div>
-        <div class="admin-order-item">
-          <span>泡面</span>
-          <span>5 碗</span>
-        </div>
+        <div class="empty-room" id="emptySummary">请点击上方包厢查看详情</div>
       </div>
       
-      <div class="admin-total" id="adminTotal">今日总收入：320 元</div>
+      <div class="admin-total" id="adminTotal">选择包厢查看订单详情</div>
       
       <div class="admin-section-title">管理功能</div>
       <div class="placeholder" id="placeholder">
@@ -362,62 +377,135 @@
       
       <div class="admin-controls">
         <button class="btn-secondary" onclick="window.location.href='?'">返回客户点单</button>
-        <button class="btn-primary" onclick="refreshData()">刷新数据</button>
+        <button class="btn-primary" onclick="refreshData()">刷新所有数据</button>
       </div>
     `;
     
-    // 为包厢标签添加点击事件
-    const roomTags = document.querySelectorAll('.room-tag');
-    roomTags.forEach(tag => {
-      tag.addEventListener('click', function() {
-        // 移除所有标签的active类
-        roomTags.forEach(t => t.classList.remove('active'));
-        // 为当前点击的标签添加active类
-        this.classList.add('active');
-        
-        // 模拟切换包厢显示不同数据
-        const roomName = this.textContent;
-        if (roomName === '所有包厢') {
-          document.getElementById('orderSummary').innerHTML = `
-            <div class="admin-order-item">
-              <span>可乐</span>
-              <span>15 杯</span>
-            </div>
-            <div class="admin-order-item">
-              <span>雪碧</span>
-              <span>12 杯</span>
-            </div>
-            <div class="admin-order-item">
-              <span>矿泉水</span>
-              <span>8 瓶</span>
-            </div>
-            <div class="admin-order-item">
-              <span>泡面</span>
-              <span>5 碗</span>
-            </div>
-          `;
-          document.getElementById('adminTotal').textContent = '今日总收入：320 元';
-        } else {
-          // 模拟显示指定包厢的数据
-          const randomNum = Math.floor(Math.random() * 10) + 1;
-          document.getElementById('orderSummary').innerHTML = `
-            <div class="admin-order-item">
-              <span>${roomName} 包厢订单</span>
-              <span>${randomNum} 件商品</span>
-            </div>
-            <div class="admin-order-item">
-              <span>可乐</span>
-              <span>${Math.floor(randomNum/2)} 杯</span>
-            </div>
-            <div class="admin-order-item">
-              <span>雪碧</span>
-              <span>${Math.floor(randomNum/3)} 杯</span>
-            </div>
-          `;
-          document.getElementById('adminTotal').textContent = `${roomName} 包厢收入：${randomNum * 8} 元`;
-        }
-      });
+    // 动态生成包厢列表
+    const roomListDiv = document.getElementById("roomList");
+    
+    // 添加"所有包厢"标签
+    const allRoomsTag = document.createElement("div");
+    allRoomsTag.className = "room-tag active";
+    allRoomsTag.textContent = "所有包厢";
+    allRoomsTag.addEventListener('click', () => showAllRoomsSummary());
+    roomListDiv.appendChild(allRoomsTag);
+    
+    // 添加16个包厢标签
+    allRooms.forEach(roomName => {
+      const roomTag = document.createElement("div");
+      roomTag.className = "room-tag";
+      roomTag.textContent = roomName;
+      roomTag.addEventListener('click', () => showRoomSummary(roomName));
+      roomListDiv.appendChild(roomTag);
     });
+    
+    // 初始化显示所有包厢汇总
+    showAllRoomsSummary();
+    
+    // 为所有包厢标签添加点击事件（使用事件委托）
+    roomListDiv.addEventListener('click', function(e) {
+      if (e.target.classList.contains('room-tag')) {
+        // 移除所有标签的active类
+        const allTags = roomListDiv.querySelectorAll('.room-tag');
+        allTags.forEach(tag => tag.classList.remove('active'));
+        // 为当前点击的标签添加active类
+        e.target.classList.add('active');
+      }
+    });
+  }
+  
+  // 显示所有包厢汇总
+  function showAllRoomsSummary() {
+    // 模拟所有包厢的总订单数据
+    const orderSummaryDiv = document.getElementById("orderSummary");
+    const adminTotalDiv = document.getElementById("adminTotal");
+    
+    // 生成模拟数据
+    const products = [
+      { name: "可乐", base: 15 },
+      { name: "雪碧", base: 12 },
+      { name: "矿泉水", base: 8 },
+      { name: "泡面", base: 5 },
+      { name: "薯片", base: 10 },
+      { name: "啤酒", base: 7 }
+    ];
+    
+    let totalRevenue = 0;
+    const priceMap = { "可乐": 5, "雪碧": 5, "矿泉水": 3, "泡面": 8, "薯片": 6, "啤酒": 10 };
+    
+    let summaryHTML = '';
+    products.forEach(product => {
+      // 随机生成一些变化
+      const randomFactor = Math.floor(Math.random() * 5) + 1;
+      const quantity = product.base * randomFactor;
+      const revenue = quantity * priceMap[product.name];
+      totalRevenue += revenue;
+      
+      summaryHTML += `
+        <div class="admin-order-item">
+          <span>${product.name}</span>
+          <span>${quantity} 件 × ${priceMap[product.name]}元 = ${revenue}元</span>
+        </div>
+      `;
+    });
+    
+    orderSummaryDiv.innerHTML = summaryHTML;
+    adminTotalDiv.textContent = `今日总收入：${totalRevenue} 元 (所有包厢)`;
+  }
+  
+  // 显示单个包厢汇总
+  function showRoomSummary(roomName) {
+    const orderSummaryDiv = document.getElementById("orderSummary");
+    const adminTotalDiv = document.getElementById("adminTotal");
+    
+    // 根据包厢名称生成不同的模拟数据
+    // 使用房间号作为随机种子，确保相同房间每次点击显示相同数据
+    let seed = 0;
+    for (let i = 0; i < roomName.length; i++) {
+      seed += roomName.charCodeAt(i);
+    }
+    
+    // 简单的伪随机生成器
+    const random = (max) => (seed * 9301 + 49297) % 233280 % max;
+    
+    const products = [
+      { name: "可乐", base: 2 },
+      { name: "雪碧", base: 1 },
+      { name: "矿泉水", base: 1 },
+      { name: "泡面", base: 1 },
+      { name: "薯片", base: 1 },
+      { name: "啤酒", base: 1 }
+    ];
+    
+    const priceMap = { "可乐": 5, "雪碧": 5, "矿泉水": 3, "泡面": 8, "薯片": 6, "啤酒": 10 };
+    
+    let summaryHTML = '';
+    let totalRevenue = 0;
+    
+    products.forEach(product => {
+      // 使用种子生成确定但随机的数量
+      const quantity = Math.max(0, Math.floor(random(10))) + product.base;
+      if (quantity > 0) {
+        const revenue = quantity * priceMap[product.name];
+        totalRevenue += revenue;
+        
+        summaryHTML += `
+          <div class="admin-order-item">
+            <span>${product.name}</span>
+            <span>${quantity} 件 × ${priceMap[product.name]}元 = ${revenue}元</span>
+          </div>
+        `;
+      }
+    });
+    
+    if (summaryHTML === '') {
+      orderSummaryDiv.innerHTML = `<div class="empty-room">${roomName} 包厢今日暂无订单</div>`;
+      adminTotalDiv.textContent = `${roomName} 包厢：0 元`;
+    } else {
+      orderSummaryDiv.innerHTML = summaryHTML;
+      adminTotalDiv.textContent = `${roomName} 包厢：${totalRevenue} 元`;
+    }
   }
   
   // 老板端刷新数据函数
@@ -433,6 +521,17 @@
     setTimeout(() => {
       placeholder.innerHTML = originalText;
       placeholder.style.color = '#999';
+      
+      // 重新计算当前显示的数据
+      const activeTag = document.querySelector('.room-tag.active');
+      if (activeTag) {
+        if (activeTag.textContent === '所有包厢') {
+          showAllRoomsSummary();
+        } else {
+          showRoomSummary(activeTag.textContent);
+        }
+      }
+      
       alert('数据已刷新！');
     }, 800);
   }
