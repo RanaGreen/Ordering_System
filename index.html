@@ -27,6 +27,13 @@
       margin-bottom: 10px;
     }
 
+    .admin-title {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #409eff;
+    }
+
     .room {
       background: #e6f2ff;
       padding: 10px;
@@ -35,10 +42,28 @@
       font-size: 16px;
     }
 
+    .admin-room {
+      background: #e6f7ed;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 16px;
+      color: #67c23a;
+    }
+
     .section-title {
       font-size: 18px;
       margin: 16px 0 8px;
       font-weight: bold;
+    }
+
+    .admin-section-title {
+      font-size: 18px;
+      margin: 16px 0 8px;
+      font-weight: bold;
+      color: #409eff;
+      border-left: 4px solid #409eff;
+      padding-left: 8px;
     }
 
     .item {
@@ -65,12 +90,31 @@
       margin-top: 16px;
     }
 
+    .admin-summary {
+      background: #f0f9ff;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 16px;
+      border: 1px solid #d9ecff;
+    }
+
     .order-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 8px;
       font-size: 14px;
+    }
+
+    .admin-order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 14px;
+      padding: 8px;
+      background: #f9f9f9;
+      border-radius: 4px;
     }
 
     .controls button {
@@ -84,103 +128,313 @@
       margin-top: 10px;
       text-align: right;
     }
+
+    .admin-total {
+      font-weight: bold;
+      margin-top: 10px;
+      text-align: right;
+      color: #409eff;
+      font-size: 16px;
+    }
+
+    .placeholder {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+      font-size: 16px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+
+    .room-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .room-tag {
+      background: #e6f2ff;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .room-tag.active {
+      background: #409eff;
+      color: white;
+    }
+
+    .admin-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .admin-controls button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #409eff;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
   </style>
 </head>
 
 <body>
-<div class="container">
-  <div class="title">九易点单系统</div>
-
-  <div class="room" id="roomInfo"></div>
-
-  <div class="section-title">商品列表</div>
-  <div id="items"></div>
-
-  <div class="section-title">当前订单</div>
-  <div class="order" id="orderList">暂无商品</div>
-
-  <div class="total" id="totalPrice">合计：0 元</div>
+<div class="container" id="container">
+  <!-- 内容将由JavaScript动态生成 -->
 </div>
 
 <script>
-  // 读取包厢
+  // 读取URL参数
   const params = new URLSearchParams(window.location.search);
   const room = params.get("room");
-  document.getElementById("roomInfo").innerText =
-    room ? `当前包厢：${room}` : "未识别包厢";
-
-  // 商品配置
-  const products = [
-    { id: 1, name: "可乐", price: 5 },
-    { id: 2, name: "雪碧", price: 5 },
-    { id: 3, name: "矿泉水", price: 3 },
-    { id: 4, name: "泡面", price: 8 }
-  ];
-
-  // 当前订单
-  const order = {};
-
-  const itemsDiv = document.getElementById("items");
-  const orderListDiv = document.getElementById("orderList");
-  const totalPriceDiv = document.getElementById("totalPrice");
-
-  // 商品列表
-  products.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <span>${p.name}（${p.price} 元）</span>
-      <button>加入</button>
+  const role = params.get("role");
+  
+  const container = document.getElementById("container");
+  
+  // 判断是否为老板端
+  const isAdmin = role === "admin";
+  
+  if (isAdmin) {
+    // 初始化老板端
+    initAdmin();
+  } else {
+    // 初始化客户端
+    initClient();
+  }
+  
+  function initClient() {
+    // 客户端点单系统 - 原有逻辑
+    container.innerHTML = `
+      <div class="title">九易点单系统</div>
+      <div class="room" id="roomInfo"></div>
+      <div class="section-title">商品列表</div>
+      <div id="items"></div>
+      <div class="section-title">当前订单</div>
+      <div class="order" id="orderList">暂无商品</div>
+      <div class="total" id="totalPrice">合计：0 元</div>
     `;
-    div.querySelector("button").onclick = () => add(p);
-    itemsDiv.appendChild(div);
-  });
+    
+    // 原有客户端逻辑
+    document.getElementById("roomInfo").innerText =
+      room ? `当前包厢：${room}` : "未识别包厢";
 
-  function add(product) {
-    if (!order[product.id]) {
-      order[product.id] = { ...product, count: 1 };
-    } else {
-      order[product.id].count++;
-    }
-    render();
-  }
+    // 商品配置
+    const products = [
+      { id: 1, name: "可乐", price: 5 },
+      { id: 2, name: "雪碧", price: 5 },
+      { id: 3, name: "矿泉水", price: 3 },
+      { id: 4, name: "泡面", price: 8 }
+    ];
 
-  function sub(productId) {
-    if (!order[productId]) return;
-    order[productId].count--;
-    if (order[productId].count <= 0) {
-      delete order[productId];
-    }
-    render();
-  }
+    // 当前订单
+    const order = {};
 
-  function render() {
-    orderListDiv.innerHTML = "";
-    let total = 0;
-    let empty = true;
+    const itemsDiv = document.getElementById("items");
+    const orderListDiv = document.getElementById("orderList");
+    const totalPriceDiv = document.getElementById("totalPrice");
 
-    for (const id in order) {
-      empty = false;
-      const item = order[id];
-      const lineTotal = item.price * item.count;
-      total += lineTotal;
-
+    // 商品列表
+    products.forEach(p => {
       const div = document.createElement("div");
-      div.className = "order-item";
+      div.className = "item";
       div.innerHTML = `
-        <span>${item.name} × ${item.count}</span>
-        <span class="controls">
-          <button onclick="sub(${id})">−</button>
-        </span>
+        <span>${p.name}（${p.price} 元）</span>
+        <button>加入</button>
       `;
-      orderListDiv.appendChild(div);
+      div.querySelector("button").onclick = () => add(p);
+      itemsDiv.appendChild(div);
+    });
+
+    function add(product) {
+      if (!order[product.id]) {
+        order[product.id] = { ...product, count: 1 };
+      } else {
+        order[product.id].count++;
+      }
+      render();
     }
 
-    if (empty) {
-      orderListDiv.innerText = "暂无商品";
+    function sub(productId) {
+      if (!order[productId]) return;
+      order[productId].count--;
+      if (order[productId].count <= 0) {
+        delete order[productId];
+      }
+      render();
     }
 
-    totalPriceDiv.innerText = `合计：${total} 元`;
+    function render() {
+      orderListDiv.innerHTML = "";
+      let total = 0;
+      let empty = true;
+
+      for (const id in order) {
+        empty = false;
+        const item = order[id];
+        const lineTotal = item.price * item.count;
+        total += lineTotal;
+
+        const div = document.createElement("div");
+        div.className = "order-item";
+        div.innerHTML = `
+          <span>${item.name} × ${item.count}</span>
+          <span class="controls">
+            <button onclick="sub(${id})">−</button>
+          </span>
+        `;
+        orderListDiv.appendChild(div);
+      }
+
+      if (empty) {
+        orderListDiv.innerText = "暂无商品";
+      }
+
+      totalPriceDiv.innerText = `合计：${total} 元`;
+    }
+    
+    // 将sub函数暴露给全局，供按钮点击调用
+    window.sub = sub;
+  }
+  
+  function initAdmin() {
+    // 老板端管理系统
+    container.innerHTML = `
+      <div class="admin-title">九易点单系统 - 老板端</div>
+      <div class="admin-room" id="roomInfo">老板端管理面板</div>
+      
+      <div class="admin-section-title">包厢列表</div>
+      <div class="room-list" id="roomList">
+        <div class="room-tag active">所有包厢</div>
+        <div class="room-tag">A01</div>
+        <div class="room-tag">A02</div>
+        <div class="room-tag">A03</div>
+        <div class="room-tag">B01</div>
+        <div class="room-tag">B02</div>
+      </div>
+      
+      <div class="admin-section-title">今日订单汇总</div>
+      <div class="admin-summary" id="orderSummary">
+        <div class="admin-order-item">
+          <span>可乐</span>
+          <span>15 杯</span>
+        </div>
+        <div class="admin-order-item">
+          <span>雪碧</span>
+          <span>12 杯</span>
+        </div>
+        <div class="admin-order-item">
+          <span>矿泉水</span>
+          <span>8 瓶</span>
+        </div>
+        <div class="admin-order-item">
+          <span>泡面</span>
+          <span>5 碗</span>
+        </div>
+      </div>
+      
+      <div class="admin-total" id="adminTotal">今日总收入：320 元</div>
+      
+      <div class="admin-section-title">管理功能</div>
+      <div class="placeholder" id="placeholder">
+        老板端功能开发中...<br>
+        后续版本将添加：<br>
+        • 实时查看各包厢订单<br>
+        • 商品库存管理<br>
+        • 销售数据统计<br>
+        • 员工管理
+      </div>
+      
+      <div class="admin-controls">
+        <button class="btn-secondary" onclick="window.location.href='?'">返回客户点单</button>
+        <button class="btn-primary" onclick="refreshData()">刷新数据</button>
+      </div>
+    `;
+    
+    // 为包厢标签添加点击事件
+    const roomTags = document.querySelectorAll('.room-tag');
+    roomTags.forEach(tag => {
+      tag.addEventListener('click', function() {
+        // 移除所有标签的active类
+        roomTags.forEach(t => t.classList.remove('active'));
+        // 为当前点击的标签添加active类
+        this.classList.add('active');
+        
+        // 模拟切换包厢显示不同数据
+        const roomName = this.textContent;
+        if (roomName === '所有包厢') {
+          document.getElementById('orderSummary').innerHTML = `
+            <div class="admin-order-item">
+              <span>可乐</span>
+              <span>15 杯</span>
+            </div>
+            <div class="admin-order-item">
+              <span>雪碧</span>
+              <span>12 杯</span>
+            </div>
+            <div class="admin-order-item">
+              <span>矿泉水</span>
+              <span>8 瓶</span>
+            </div>
+            <div class="admin-order-item">
+              <span>泡面</span>
+              <span>5 碗</span>
+            </div>
+          `;
+          document.getElementById('adminTotal').textContent = '今日总收入：320 元';
+        } else {
+          // 模拟显示指定包厢的数据
+          const randomNum = Math.floor(Math.random() * 10) + 1;
+          document.getElementById('orderSummary').innerHTML = `
+            <div class="admin-order-item">
+              <span>${roomName} 包厢订单</span>
+              <span>${randomNum} 件商品</span>
+            </div>
+            <div class="admin-order-item">
+              <span>可乐</span>
+              <span>${Math.floor(randomNum/2)} 杯</span>
+            </div>
+            <div class="admin-order-item">
+              <span>雪碧</span>
+              <span>${Math.floor(randomNum/3)} 杯</span>
+            </div>
+          `;
+          document.getElementById('adminTotal').textContent = `${roomName} 包厢收入：${randomNum * 8} 元`;
+        }
+      });
+    });
+  }
+  
+  // 老板端刷新数据函数
+  function refreshData() {
+    if (!isAdmin) return;
+    
+    const placeholder = document.getElementById('placeholder');
+    const originalText = placeholder.innerHTML;
+    placeholder.innerHTML = '正在刷新数据...';
+    placeholder.style.color = '#409eff';
+    
+    // 模拟网络请求延迟
+    setTimeout(() => {
+      placeholder.innerHTML = originalText;
+      placeholder.style.color = '#999';
+      alert('数据已刷新！');
+    }, 800);
   }
 </script>
 </body>
