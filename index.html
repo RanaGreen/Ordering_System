@@ -1,1024 +1,217 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <title>九易棋牌室管理系统</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>棋牌室点单系统</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
-      background: #f5f5f5;
-      margin: 0;
-    }
-
-    .container {
-      max-width: 480px;
-      margin: 0 auto;
-      background: #ffffff;
-      min-height: 100vh;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-
-    .title {
-      font-size: 22px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
-    .admin-title {
-      font-size: 22px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: #409eff;
-    }
-
-    .room-info {
-      background: #e6f2ff;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 16px;
-      font-size: 16px;
-    }
-
-    .admin-room-info {
-      background: #e6f7ed;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 16px;
-      font-size: 16px;
-      color: #67c23a;
-    }
-
-    .section-title {
-      font-size: 18px;
-      margin: 16px 0 8px;
-      font-weight: bold;
-    }
-
-    .item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #eee;
-    }
-
-    .item button {
-      background: #409eff;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-
-    .order {
-      background: #fafafa;
-      padding: 10px;
-      border-radius: 6px;
-      margin-top: 16px;
-    }
-
-    .order-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      font-size: 14px;
-    }
-
-    .controls button {
-      margin-left: 6px;
-      padding: 2px 8px;
-      font-size: 14px;
-    }
-
-    .total {
-      font-weight: bold;
-      margin-top: 10px;
-      text-align: right;
-    }
-
-    .submit-btn {
-      background: #67c23a;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 6px;
-      font-size: 16px;
-      width: 100%;
-      margin-top: 20px;
-      cursor: pointer;
-    }
-
-    /* 老板端样式 */
-    .admin-container {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .admin-section {
-      background: #f9f9f9;
-      padding: 16px;
-      border-radius: 8px;
-      border: 1px solid #eee;
-    }
-
-    .time-display {
-      font-size: 18px;
-      font-weight: bold;
-      text-align: center;
-      padding: 10px;
-      background: #333;
-      color: white;
-      border-radius: 6px;
-      margin-bottom: 16px;
-    }
-
-    .form-group {
-      margin-bottom: 12px;
-    }
-
-    .form-label {
-      display: block;
-      margin-bottom: 4px;
-      font-weight: 500;
-    }
-
-    .form-select, .form-input {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-
-    .form-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-
-    .btn-primary {
-      background: #409eff;
-      color: white;
-    }
-
-    .btn-secondary {
-      background: #f0f0f0;
-      color: #333;
-    }
-
-    .btn-success {
-      background: #67c23a;
-      color: white;
-    }
-
-    .btn-danger {
-      background: #f56c6c;
-      color: white;
-    }
-
-    .rooms-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .room-btn {
-      padding: 12px 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background: #f9f9f9;
-      color: #999;
-      cursor: not-allowed;
-      font-size: 14px;
-      text-align: center;
-    }
-
-    .room-btn.active {
-      background: #409eff;
-      color: white;
-      border-color: #409eff;
-      cursor: pointer;
-    }
-
-    .room-detail {
-      margin-top: 16px;
-      padding: 16px;
-      background: #f0f9ff;
-      border-radius: 8px;
-      border: 1px solid #d9ecff;
-    }
-
-    .detail-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #e6f2ff;
-    }
-
-    .detail-label {
-      font-weight: 500;
-      color: #666;
-    }
-
-    .detail-value {
-      font-weight: bold;
-    }
-
-    .timer-display {
-      font-size: 24px;
-      font-weight: bold;
-      text-align: center;
-      color: #409eff;
-      margin: 16px 0;
-    }
-
-    .order-items-list {
-      margin-top: 16px;
-    }
-
-    .order-item-detail {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 0;
-      border-bottom: 1px solid #eee;
-    }
-
-    .total-amount {
-      font-size: 20px;
-      font-weight: bold;
-      color: #f56c6c;
-      text-align: right;
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 2px solid #ddd;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: #999;
-      font-size: 16px;
-    }
-
-    .history-section {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid #eee;
-    }
-
-    .history-item {
-      background: #f9f9f9;
-      padding: 12px;
-      border-radius: 6px;
-      margin-bottom: 8px;
-      border-left: 4px solid #ddd;
-    }
-
-    .history-item.paid {
-      border-left-color: #67c23a;
-    }
-
-    .history-item.cancelled {
-      border-left-color: #f56c6c;
-    }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#111; color:#eee; margin:0; padding:16px; }
+    h1,h2 { margin-top:0; }
+    .card { background:#1e1e1e; border-radius:8px; padding:16px; margin-bottom:16px; }
+    button { padding:8px 12px; margin:4px; border-radius:6px; border:none; background:#2d7cff; color:white; font-size:14px; }
+    button.secondary { background:#555; }
+    button.danger { background:#c0392b; }
+    button:disabled { opacity:0.5; }
+    .row { display:flex; justify-content:space-between; align-items:center; margin:6px 0; }
+    .muted { color:#aaa; font-size:12px; }
+    input { padding:6px; border-radius:4px; border:none; }
   </style>
 </head>
-
 <body>
-<div class="container" id="container">
-  <!-- 内容将由JavaScript动态生成 -->
-</div>
 
 <script>
-  // ==================== 配置常量 ====================
-  const CONFIG = {
-    // 16个包厢
-    ROOMS: [
-      "V111", "V222", "V333", "V04", "V555", "V666", "V777", "V888",
-      "V999", "V10", "U1", "U2", "U3", "U5", "U6", "U7"
-    ],
-    
-    // 包厢类型和基础价格
-    ROOM_TYPES: {
-      "small": { name: "小包", price: 40 },
-      "medium": { name: "中包", price: 70 },
-      "large": { name: "大包", price: 90 }
-    },
-    
-    // 基础时长（小时）
-    BASE_DURATION: 5,
-    
-    // 超时单价（元/小时）
-    OVER_TIME_PRICE: 20,
-    
-    // 费用减免选项（元）
-    DISCOUNT_OPTIONS: [0, 10, 20, 30, 50, 100],
-    
-    // 支付方式
-    PAYMENT_METHODS: ["支付宝", "微信", "现金", "美团", "其他"],
-    
-    // 商品列表
-    PRODUCTS: [
-      { id: 1, name: "可乐", price: 5 },
-      { id: 2, name: "雪碧", price: 5 },
-      { id: 3, name: "矿泉水", price: 3 },
-      { id: 4, name: "泡面", price: 8 },
-      { id: 5, name: "薯片", price: 10 },
-      { id: 6, name: "啤酒", price: 15 }
-    ]
+/**********************
+ * 1. 核心配置（唯一真相源）
+ **********************/
+const CONFIG = {
+  ROOMS: ["A1", "A2", "B1", "B2"],
+  BASE_PRICE: 120,
+  BASE_HOURS: 4,
+  OVER_TIME_PRICE: 30,
+  PRODUCTS: [
+    { id: "cola", name: "可乐", price: 5 },
+    { id: "water", name: "矿泉水", price: 3 },
+    { id: "snack", name: "零食", price: 10 }
+  ]
+};
+
+/**********************
+ * 2. 存储层（只服务老板端）
+ **********************/
+const STORAGE = {
+  status(room) {
+    return JSON.parse(localStorage.getItem(`room_status_${room}`));
+  },
+  saveStatus(room, data) {
+    localStorage.setItem(`room_status_${room}`, JSON.stringify(data));
+  },
+  clearStatus(room) {
+    localStorage.removeItem(`room_status_${room}`);
+  },
+  orders(room) {
+    return JSON.parse(localStorage.getItem(`orders_${room}`)) || [];
+  },
+  saveOrders(room, orders) {
+    localStorage.setItem(`orders_${room}`, JSON.stringify(orders));
+  }
+};
+
+/**********************
+ * 3. 业务层（纯逻辑，无 DOM）
+ **********************/
+const Service = {
+  openRoom(room) {
+    if (STORAGE.status(room)) return false;
+    STORAGE.saveStatus(room, { room, startTime: Date.now(), items: [] });
+    STORAGE.saveOrders(room, []);
+    return true;
+  },
+
+  addItem(room, productId) {
+    const status = STORAGE.status(room);
+    if (!status) return;
+    const product = CONFIG.PRODUCTS.find(p => p.id === productId);
+    status.items.push({ ...product, time: Date.now() });
+    STORAGE.saveStatus(room, status);
+  },
+
+  calcTotal(room) {
+    const status = STORAGE.status(room);
+    if (!status) return 0;
+
+    const now = Date.now();
+    const hours = (now - status.startTime) / 3600000;
+    const overtime = Math.max(0, hours - CONFIG.BASE_HOURS);
+
+    const timeFee = CONFIG.BASE_PRICE + Math.ceil(overtime) * CONFIG.OVER_TIME_PRICE;
+    const productFee = status.items.reduce((s, i) => s + i.price, 0);
+
+    return { timeFee, productFee, total: timeFee + productFee };
+  },
+
+  checkout(room) {
+    const bill = Service.calcTotal(room);
+    STORAGE.clearStatus(room);
+    return bill;
+  }
+};
+
+/**********************
+ * 4. 路由（老板 / 客户）
+ **********************/
+const params = new URLSearchParams(location.search);
+const room = params.get("room");
+const role = params.get("role");
+
+if (!room || !CONFIG.ROOMS.includes(room)) {
+  document.body.innerHTML = "<h2>无效房间</h2>";
+} else if (role === "admin") {
+  initAdmin(room);
+} else {
+  initClient(room);
+}
+
+/**********************
+ * 5. 客户端（只做 UI，不写状态）
+ **********************/
+function initClient(room) {
+  const status = STORAGE.status(room);
+  document.body.innerHTML = `<h1>包厢 ${room}</h1>`;
+
+  if (!status) {
+    document.body.innerHTML += `<p class='muted'>包厢尚未开台，请联系老板</p>`;
+    return;
+  }
+
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `<h2>点单</h2>`;
+
+  CONFIG.PRODUCTS.forEach(p => {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `<span>${p.name} ¥${p.price}</span>`;
+    const btn = document.createElement("button");
+    btn.textContent = "添加";
+    btn.onclick = () => {
+      // 关键：客户端不直接写老板数据
+      alert("已通知老板加单：" + p.name);
+    };
+    row.appendChild(btn);
+    card.appendChild(row);
+  });
+
+  document.body.appendChild(card);
+}
+
+/**********************
+ * 6. 老板端（唯一写数据者）
+ **********************/
+function initAdmin(room) {
+  document.body.innerHTML = `<h1>老板端 - 包厢 ${room}</h1>`;
+
+  const wrap = document.createElement("div");
+
+  const status = STORAGE.status(room);
+
+  if (!status) {
+    const openBtn = document.createElement("button");
+    openBtn.textContent = "开台";
+    openBtn.onclick = () => { Service.openRoom(room); location.reload(); };
+    wrap.appendChild(openBtn);
+    document.body.appendChild(wrap);
+    return;
+  }
+
+  const bill = Service.calcTotal(room);
+
+  const info = document.createElement("div");
+  info.className = "card";
+  info.innerHTML = `
+    <h2>当前消费</h2>
+    <p>时间费用：¥${bill.timeFee}</p>
+    <p>商品费用：¥${bill.productFee}</p>
+    <h3>合计：¥${bill.total}</h3>
+  `;
+
+  const products = document.createElement("div");
+  products.className = "card";
+  products.innerHTML = `<h2>加商品</h2>`;
+
+  CONFIG.PRODUCTS.forEach(p => {
+    const btn = document.createElement("button");
+    btn.textContent = p.name;
+    btn.onclick = () => { Service.addItem(room, p.id); location.reload(); };
+    products.appendChild(btn);
+  });
+
+  const actions = document.createElement("div");
+  actions.className = "card";
+
+  const checkoutBtn = document.createElement("button");
+  checkoutBtn.className = "danger";
+  checkoutBtn.textContent = "结账";
+  checkoutBtn.onclick = () => {
+    const b = Service.checkout(room);
+    alert(`结账完成：¥${b.total}`);
+    location.reload();
   };
-  
-  // ==================== 存储键名 ====================
-  const STORAGE_KEYS = {
-    ROOM_STATUS: "jiuyi_room_status",     // 当前包厢状态
-    ORDER_HISTORY: "jiuyi_order_history", // 历史记录
-    PRODUCT_ORDERS: "jiuyi_product_orders" // 商品订单
-  };
-  
-  // ==================== 读取URL参数 ====================
-  const params = new URLSearchParams(window.location.search);
-  const room = params.get("room");
-  const role = params.get("role");
-  
-  const container = document.getElementById("container");
-  const isAdmin = role === "admin";
-  
-  // ==================== 主初始化函数 ====================
-  if (isAdmin) {
-    initAdmin();
-  } else {
-    initClient();
-  }
-  
-  // ==================== 存储操作函数 ====================
-  
-  // 获取所有包厢状态
-  function getAllRoomStatus() {
-    const data = localStorage.getItem(STORAGE_KEYS.ROOM_STATUS);
-    return data ? JSON.parse(data) : {};
-  }
-  
-  // 保存包厢状态
-  function saveRoomStatus(roomStatus) {
-    localStorage.setItem(STORAGE_KEYS.ROOM_STATUS, JSON.stringify(roomStatus));
-  }
-  
-  // 获取单个包厢状态
-  function getRoomStatus(roomName) {
-    const status = getAllRoomStatus();
-    return status[roomName] || null;
-  }
-  
-  // 更新单个包厢状态
-  function updateRoomStatus(roomName, data) {
-    const status = getAllRoomStatus();
-    status[roomName] = data;
-    saveRoomStatus(status);
-  }
-  
-  // 删除包厢状态（收工/撤销时使用）
-  function deleteRoomStatus(roomName) {
-    const status = getAllRoomStatus();
-    if (status[roomName]) {
-      const historyData = status[roomName];
-      delete status[roomName];
-      saveRoomStatus(status);
-      return historyData;
-    }
-    return null;
-  }
-  
-  // 获取历史记录
-  function getHistory() {
-    const data = localStorage.getItem(STORAGE_KEYS.ORDER_HISTORY);
-    return data ? JSON.parse(data) : [];
-  }
-  
-  // 添加历史记录
-  function addToHistory(record) {
-    const history = getHistory();
-    history.push(record);
-    localStorage.setItem(STORAGE_KEYS.ORDER_HISTORY, JSON.stringify(history));
-  }
-  
-  // 获取商品订单
-  function getProductOrders() {
-    const data = localStorage.getItem(STORAGE_KEYS.PRODUCT_ORDERS);
-    return data ? JSON.parse(data) : {};
-  }
-  
-  // 保存商品订单
-  function saveProductOrders(orders) {
-    localStorage.setItem(STORAGE_KEYS.PRODUCT_ORDERS, JSON.stringify(orders));
-  }
-  
-  // 获取指定包厢的商品订单
-  function getRoomProductOrders(roomName) {
-    const orders = getProductOrders();
-    return orders[roomName] || [];
-  }
-  
-  // 添加商品订单到指定包厢
-  function addProductOrder(roomName, order) {
-    const orders = getProductOrders();
-    if (!orders[roomName]) {
-      orders[roomName] = [];
-    }
-    orders[roomName].push({
-      ...order,
-      time: new Date().toLocaleString()
-    });
-    saveProductOrders(orders);
-  }
-  
-  // ==================== 客户端功能 ====================
-  function initClient() {
-    // 检查包厢是否有效
-    const isValidRoom = CONFIG.ROOMS.includes(room);
-    
-    if (!isValidRoom) {
-      container.innerHTML = `
-        <div class="title">九易棋牌室点单系统</div>
-        <div class="room-info">错误：无效的包厢号</div>
-        <div style="text-align:center; padding:40px 20px; color:#999;">
-          请通过正确的包厢链接访问
-        </div>
-      `;
-      return;
-    }
-    
-    // 检查包厢是否已开台
-    const roomStatus = getRoomStatus(room);
-    if (!roomStatus) {
-      container.innerHTML = `
-        <div class="title">九易棋牌室点单系统</div>
-        <div class="room-info">当前包厢：${room}</div>
-        <div style="text-align:center; padding:40px 20px; color:#999;">
-          包厢尚未开台，请通知工作人员
-        </div>
-      `;
-      return;
-    }
-    
-    // 正常点单界面
-    container.innerHTML = `
-      <div class="title">九易棋牌室点单系统</div>
-      <div class="room-info">当前包厢：${room}</div>
-      
-      <div class="section-title">商品列表</div>
-      <div id="items"></div>
-      
-      <div class="section-title">当前订单</div>
-      <div class="order" id="orderList">暂无商品</div>
-      
-      <div class="total" id="totalPrice">合计：0 元</div>
-      
-      <button class="submit-btn" id="submitBtn">提交点单</button>
-    `;
-    
-    // 当前点单数据
-    let currentOrder = {};
-    
-    const itemsDiv = document.getElementById("items");
-    const orderListDiv = document.getElementById("orderList");
-    const totalPriceDiv = document.getElementById("totalPrice");
-    const submitBtn = document.getElementById("submitBtn");
-    
-    // 生成商品列表
-    CONFIG.PRODUCTS.forEach(p => {
-      const div = document.createElement("div");
-      div.className = "item";
-      div.innerHTML = `
-        <span>${p.name}（${p.price} 元）</span>
-        <button>加入</button>
-      `;
-      div.querySelector("button").onclick = () => addToOrder(p);
-      itemsDiv.appendChild(div);
-    });
-    
-    // 添加到订单
-    function addToOrder(product) {
-      if (!currentOrder[product.id]) {
-        currentOrder[product.id] = { ...product, count: 1 };
-      } else {
-        currentOrder[product.id].count++;
-      }
-      renderOrder();
-    }
-    
-    // 减少商品数量
-    function removeFromOrder(productId) {
-      if (!currentOrder[productId]) return;
-      currentOrder[productId].count--;
-      if (currentOrder[productId].count <= 0) {
-        delete currentOrder[productId];
-      }
-      renderOrder();
-    }
-    
-    // 渲染订单
-    function renderOrder() {
-      orderListDiv.innerHTML = "";
-      let total = 0;
-      let empty = true;
-      
-      for (const id in currentOrder) {
-        empty = false;
-        const item = currentOrder[id];
-        const lineTotal = item.price * item.count;
-        total += lineTotal;
-        
-        const div = document.createElement("div");
-        div.className = "order-item";
-        div.innerHTML = `
-          <span>${item.name} × ${item.count}</span>
-          <span class="controls">
-            <button onclick="clientApp.remove(${id})">−</button>
-          </span>
-        `;
-        orderListDiv.appendChild(div);
-      }
-      
-      if (empty) {
-        orderListDiv.innerText = "暂无商品";
-        submitBtn.disabled = true;
-      } else {
-        submitBtn.disabled = false;
-      }
-      
-      totalPriceDiv.innerText = `合计：${total} 元`;
-    }
-    
-    // 提交点单
-    submitBtn.onclick = function() {
-      if (Object.keys(currentOrder).length === 0) {
-        alert("请先添加商品");
-        return;
-      }
-      
-      // 构建订单数据
-      const orderItems = [];
-      let total = 0;
-      
-      for (const id in currentOrder) {
-        const item = currentOrder[id];
-        const lineTotal = item.price * item.count;
-        total += lineTotal;
-        orderItems.push({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          count: item.count,
-          total: lineTotal
-        });
-      }
-      
-      // 保存到商品订单
-      addProductOrder(room, {
-        items: orderItems,
-        total: total
-      });
-      
-      // 更新包厢状态中的商品总额
-      const roomStatus = getRoomStatus(room);
-      roomStatus.productTotal = (roomStatus.productTotal || 0) + total;
-      updateRoomStatus(room, roomStatus);
-      
-      // 清空当前订单
-      currentOrder = {};
-      renderOrder();
-      
-      alert("点单已提交！工作人员将为您准备商品。");
-    };
-    
-    // 初始化显示
-    renderOrder();
-    
-    // 暴露函数给全局
-    window.clientApp = {
-      remove: removeFromOrder
-    };
-  }
-  
-  // ==================== 老板端功能 ====================
-  function initAdmin() {
-    container.innerHTML = `
-      <div class="admin-title">九易棋牌室管理系统</div>
-      
-      <div class="admin-section">
-        <div class="time-display" id="currentTime">正在加载时间...</div>
-        
-        <div class="section-title">开台功能</div>
-        
-        <div class="form-group">
-          <label class="form-label">包厢号</label>
-          <select class="form-select" id="roomSelect">
-            <option value="">请选择包厢</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label">包厢类型</label>
-          <select class="form-select" id="roomType">
-            <option value="small">小包 (40元/5小时)</option>
-            <option value="medium">中包 (70元/5小时)</option>
-            <option value="large">大包 (90元/5小时)</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label">基础时长 (小时)</label>
-          <input type="number" class="form-input" id="baseDuration" value="5" min="1">
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label">费用减免 (元)</label>
-          <select class="form-select" id="discount">
-            ${CONFIG.DISCOUNT_OPTIONS.map(d => `<option value="${d}">${d === 0 ? '无减免' : `减免 ${d} 元`}</option>`).join('')}
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label">支付方式</label>
-          <select class="form-select" id="paymentMethod">
-            ${CONFIG.PAYMENT_METHODS.map(m => `<option value="${m}">${m}</option>`).join('')}
-          </select>
-        </div>
-        
-        <div class="form-actions">
-          <button class="btn btn-secondary" id="cancelBtn">取消</button>
-          <button class="btn btn-primary" id="confirmBtn">确认开台</button>
-        </div>
-      </div>
-      
-      <div class="admin-section">
-        <div class="section-title">包厢一览</div>
-        <div class="rooms-grid" id="roomsGrid">
-          <!-- 包厢按钮将动态生成 -->
-        </div>
-        
-        <div id="roomDetailContainer">
-          <!-- 包厢详情将动态显示在这里 -->
-        </div>
-      </div>
-      
-      <div class="admin-section">
-        <div class="section-title">历史记录</div>
-        <div id="historyList">
-          <!-- 历史记录将动态显示在这里 -->
-        </div>
-      </div>
-    `;
-    
-    // 更新时间显示
-    function updateTime() {
-      const now = new Date();
-      const timeStr = now.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-      });
-      document.getElementById('currentTime').textContent = timeStr;
-    }
-    
-    // 填充包厢选择下拉框
-    const roomSelect = document.getElementById('roomSelect');
-    CONFIG.ROOMS.forEach(roomName => {
-      const option = document.createElement('option');
-      option.value = roomName;
-      option.textContent = roomName;
-      roomSelect.appendChild(option);
-    });
-    
-    // 生成包厢按钮网格
-    function renderRoomsGrid() {
-      const roomsGrid = document.getElementById('roomsGrid');
-      roomsGrid.innerHTML = '';
-      
-      const roomStatus = getAllRoomStatus();
-      
-      CONFIG.ROOMS.forEach(roomName => {
-        const button = document.createElement('button');
-        button.className = 'room-btn';
-        button.textContent = roomName;
-        
-        if (roomStatus[roomName]) {
-          button.classList.add('active');
-          button.onclick = () => showRoomDetail(roomName);
-        }
-        
-        roomsGrid.appendChild(button);
-      });
-    }
-    
-    // 显示包厢详情
-    function showRoomDetail(roomName) {
-      const roomStatus = getRoomStatus(roomName);
-      const productOrders = getRoomProductOrders(roomName);
-      
-      if (!roomStatus) return;
-      
-      // 计算时间
-      const startTime = new Date(roomStatus.startTime);
-      const now = new Date();
-      const baseDuration = roomStatus.baseDuration || CONFIG.BASE_DURATION;
-      
-      // 计算已用时间（小时）
-      const elapsedHours = (now - startTime) / (1000 * 60 * 60);
-      const remainingHours = Math.max(0, baseDuration - elapsedHours);
-      
-      // 计算超时费用
-      const overtimeHours = Math.max(0, elapsedHours - baseDuration);
-      const overtimeFee = Math.ceil(overtimeHours) * CONFIG.OVER_TIME_PRICE;
-      
-      // 计算包厢总费用
-      const basePrice = CONFIG.ROOM_TYPES[roomStatus.roomType].price;
-      const discount = roomStatus.discount || 0;
-      const roomFee = basePrice + overtimeFee - discount;
-      
-      // 计算商品总费用
-      const productTotal = roomStatus.productTotal || 0;
-      
-      // 总计
-      const totalAmount = roomFee + productTotal;
-      
-      const detailContainer = document.getElementById('roomDetailContainer');
-      detailContainer.innerHTML = `
-        <div class="room-detail">
-          <div class="detail-item">
-            <span class="detail-label">包厢号</span>
-            <span class="detail-value">${roomName}</span>
-          </div>
-          
-          <div class="detail-item">
-            <span class="detail-label">开台时间</span>
-            <span class="detail-value">${roomStatus.startTimeDisplay}</span>
-          </div>
-          
-          <div class="detail-item">
-            <span class="detail-label">包厢类型</span>
-            <span class="detail-value">${CONFIG.ROOM_TYPES[roomStatus.roomType].name}</span>
-          </div>
-          
-          <div class="detail-item">
-            <span class="detail-label">基础价格</span>
-            <span class="detail-value">${basePrice} 元</span>
-          </div>
-          
-          <div class="detail-item">
-            <span class="detail-label">基础时长</span>
-            <span class="detail-value">${baseDuration} 小时</span>
-          </div>
-          
-          <div class="detail-item">
-            <span class="detail-label">已用时间</span>
-            <span class="detail-value">${elapsedHours.toFixed(1)} 小时</span>
-          </div>
-          
-          <div class="timer-display">
-            剩余时间: ${remainingHours.toFixed(1)} 小时
-          </div>
-          
-          <div class="detail-item">
-            <span class="detail-label">超时费用</span>
-            <span class="detail-value">${overtimeFee} 元</span>
-          </div>
-          
-          <div class="detail-item">
-            <span class="detail-label">费用减免</span>
-            <span class="detail-value">-${discount} 元</span>
-          </div>
-          
-          <div class="detail-item" style="font-weight:bold; border-bottom:2px solid #409eff;">
-            <span class="detail-label">包厢费用</span>
-            <span class="detail-value">${roomFee} 元</span>
-          </div>
-          
-          <div class="section-title">商品点单记录</div>
-          
-          <div class="order-items-list" id="productOrdersList">
-            ${productOrders.length > 0 ? 
-              productOrders.map(order => `
-                <div class="order-item-detail">
-                  <span>${order.time}</span>
-                  <span>${order.total} 元</span>
-                </div>
-              `).join('') : 
-              '<div style="text-align:center; color:#999; padding:10px;">暂无点单记录</div>'
-            }
-          </div>
-          
-          <div class="detail-item">
-            <span class="detail-label">商品总额</span>
-            <span class="detail-value">${productTotal} 元</span>
-          </div>
-          
-          <div class="total-amount">
-            总计: ${totalAmount} 元
-          </div>
-          
-          <div class="detail-item">
-            <span class="detail-label">支付方式</span>
-            <span class="detail-value">${roomStatus.paymentMethod || '未选择'}</span>
-          </div>
-          
-          <div class="form-actions" style="margin-top:20px;">
-            <button class="btn btn-danger" onclick="adminApp.cancelOrder('${roomName}')">撤销订单</button>
-            <button class="btn btn-success" onclick="adminApp.completeOrder('${roomName}')">收工结账</button>
-          </div>
-        </div>
-      `;
-    }
-    
-    // 显示历史记录
-    function renderHistory() {
-      const historyList = document.getElementById('historyList');
-      const history = getHistory();
-      
-      if (history.length === 0) {
-        historyList.innerHTML = '<div class="empty-state">暂无历史记录</div>';
-        return;
-      }
-      
-      historyList.innerHTML = history.map(record => `
-        <div class="history-item ${record.status}">
-          <div><strong>${record.roomName}</strong> - ${record.startTimeDisplay}</div>
-          <div>类型: ${CONFIG.ROOM_TYPES[record.roomType].name} | 时长: ${record.duration.toFixed(1)}小时</div>
-          <div>包厢费: ${record.roomFee}元 | 商品费: ${record.productTotal}元</div>
-          <div>总计: ${record.totalAmount}元 | 状态: ${record.status === 'completed' ? '已结账' : '已撤销'}</div>
-          <div style="font-size:12px; color:#999;">${record.endTime}</div>
-        </div>
-      `).join('');
-    }
-    
-    // 确认开台
-    document.getElementById('confirmBtn').onclick = function() {
-      const roomName = roomSelect.value;
-      const roomType = document.getElementById('roomType').value;
-      const baseDuration = parseInt(document.getElementById('baseDuration').value) || CONFIG.BASE_DURATION;
-      const discount = parseInt(document.getElementById('discount').value) || 0;
-      const paymentMethod = document.getElementById('paymentMethod').value;
-      
-      if (!roomName) {
-        alert('请选择包厢号');
-        return;
-      }
-      
-      // 检查包厢是否已开台
-      const existingStatus = getRoomStatus(roomName);
-      if (existingStatus) {
-        alert(`包厢 ${roomName} 已开台，请先结账或撤销`);
-        return;
-      }
-      
-      // 创建包厢状态
-      const now = new Date();
-      const roomStatus = {
-        startTime: now.toISOString(),
-        startTimeDisplay: now.toLocaleString('zh-CN'),
-        roomType: roomType,
-        baseDuration: baseDuration,
-        discount: discount,
-        paymentMethod: paymentMethod,
-        productTotal: 0
-      };
-      
-      // 保存状态
-      updateRoomStatus(roomName, roomStatus);
-      
-      // 重置表单
-      roomSelect.value = '';
-      document.getElementById('baseDuration').value = CONFIG.BASE_DURATION;
-      document.getElementById('discount').value = 0;
-      
-      // 更新UI
-      renderRoomsGrid();
-      alert(`包厢 ${roomName} 已成功开台！`);
-    };
-    
-    // 取消按钮
-    document.getElementById('cancelBtn').onclick = function() {
-      roomSelect.value = '';
-      document.getElementById('baseDuration').value = CONFIG.BASE_DURATION;
-      document.getElementById('discount').value = 0;
-    };
-    
-    // 收工结账
-    function completeOrder(roomName) {
-      if (!confirm(`确认 ${roomName} 包厢收工结账吗？`)) return;
-      
-      const roomStatus = deleteRoomStatus(roomName);
-      if (!roomStatus) return;
-      
-      // 计算最终费用
-      const startTime = new Date(roomStatus.startTime);
-      const endTime = new Date();
-      const baseDuration = roomStatus.baseDuration || CONFIG.BASE_DURATION;
-      
-      const elapsedHours = (endTime - startTime) / (1000 * 60 * 60);
-      const overtimeHours = Math.max(0, elapsedHours - baseDuration);
-      const overtimeFee = Math.ceil(overtimeHours) * CONFIG.OVER_TIME_PRICE;
-      
-      const basePrice = CONFIG.ROOM_TYPES[roomStatus.roomType].price;
-      const discount = roomStatus.discount || 0;
-      const roomFee = basePrice + overtimeFee - discount;
-      const productTotal = roomStatus.productTotal || 0;
-      const totalAmount = roomFee + productTotal;
-      
-      // 保存到历史记录
-      addToHistory({
-        roomName: roomName,
-        startTime: roomStatus.startTime,
-        startTimeDisplay: roomStatus.startTimeDisplay,
-        endTime: endTime.toLocaleString('zh-CN'),
-        roomType: roomStatus.roomType,
-        baseDuration: baseDuration,
-        actualDuration: elapsedHours,
-        discount: discount,
-        roomFee: roomFee,
-        productTotal: productTotal,
-        totalAmount: totalAmount,
-        paymentMethod: roomStatus.paymentMethod,
-        status: 'completed'
-      });
-      
-      // 清除该包厢的商品订单
-      const productOrders = getProductOrders();
-      delete productOrders[roomName];
-      saveProductOrders(productOrders);
-      
-      // 更新UI
-      renderRoomsGrid();
-      document.getElementById('roomDetailContainer').innerHTML = '';
-      renderHistory();
-      
-      alert(`包厢 ${roomName} 已结账，总计 ${totalAmount} 元`);
-    }
-    
-    // 撤销订单
-    function cancelOrder(roomName) {
-      if (!confirm(`确认撤销 ${roomName} 包厢的订单吗？`)) return;
-      
-      const roomStatus = deleteRoomStatus(roomName);
-      if (!roomStatus) return;
-      
-      // 保存到历史记录（撤销状态）
-      addToHistory({
-        roomName: roomName,
-        startTime: roomStatus.startTime,
-        startTimeDisplay: roomStatus.startTimeDisplay,
-        endTime: new Date().toLocaleString('zh-CN'),
-        roomType: roomStatus.roomType,
-        status: 'cancelled'
-      });
-      
-      // 清除该包厢的商品订单
-      const productOrders = getProductOrders();
-      delete productOrders[roomName];
-      saveProductOrders(productOrders);
-      
-      // 更新UI
-      renderRoomsGrid();
-      document.getElementById('roomDetailContainer').innerHTML = '';
-      renderHistory();
-      
-      alert(`包厢 ${roomName} 订单已撤销`);
-    }
-    
-    // 初始加载
-    updateTime();
-    setInterval(updateTime, 1000);
-    renderRoomsGrid();
-    renderHistory();
-    
-    // 暴露函数给全局
-    window.adminApp = {
-      completeOrder: completeOrder,
-      cancelOrder: cancelOrder
-    };
-  }
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "secondary";
+  cancelBtn.textContent = "撤销";
+  cancelBtn.onclick = () => { STORAGE.clearStatus(room); location.reload(); };
+
+  actions.appendChild(checkoutBtn);
+  actions.appendChild(cancelBtn);
+
+  wrap.appendChild(info);
+  wrap.appendChild(products);
+  wrap.appendChild(actions);
+
+  document.body.appendChild(wrap);
+}
 </script>
+
 </body>
 </html>
