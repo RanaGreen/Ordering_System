@@ -1,187 +1,187 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <title>九易点单系统</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>九易点单系统</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
-      background: #f5f5f5;
-      margin: 0;
-    }
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+      background: #f5f5f5;
+      margin: 0;
+    }
 
-    .container {
-      max-width: 480px;
-      margin: 0 auto;
-      background: #ffffff;
-      min-height: 100vh;
-      padding: 16px;
-      box-sizing: border-box;
-    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #ffffff;
+      min-height: 100vh;
+      padding: 16px;
+      box-sizing: border-box;
+    }
 
-    .title {
-      font-size: 22px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
+    .title {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
 
-    .room {
-      background: #e6f2ff;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 16px;
-      font-size: 16px;
-    }
+    .room {
+      background: #e6f2ff;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
 
-    .section-title {
-      font-size: 18px;
-      margin: 16px 0 8px;
-      font-weight: bold;
-    }
+    .section-title {
+      font-size: 18px;
+      margin: 16px 0 8px;
+      font-weight: bold;
+    }
 
-    .item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #eee;
-    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
 
-    .item button {
-      background: #409eff;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-size: 14px;
-    }
+    .item button {
+      background: #409eff;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
 
-    .order {
-      background: #fafafa;
-      padding: 10px;
-      border-radius: 6px;
-      margin-top: 16px;
-    }
+    .order {
+      background: #fafafa;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 16px;
+    }
 
-    .order-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      font-size: 14px;
-    }
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
 
-    .controls button {
-      margin-left: 6px;
-      padding: 2px 8px;
-      font-size: 14px;
-    }
+    .controls button {
+      margin-left: 6px;
+      padding: 2px 8px;
+      font-size: 14px;
+    }
 
-    .total {
-      font-weight: bold;
-      margin-top: 10px;
-      text-align: right;
-    }
-  </style>
+    .total {
+      font-weight: bold;
+      margin-top: 10px;
+      text-align: right;
+    }
+  </style>
 </head>
 
 <body>
 <div class="container">
-  <div class="title">九易点单系统</div>
+  <div class="title">九易点单系统</div>
 
-  <div class="room" id="roomInfo"></div>
+  <div class="room" id="roomInfo"></div>
 
-  <div class="section-title">商品列表</div>
-  <div id="items"></div>
+  <div class="section-title">商品列表</div>
+  <div id="items"></div>
 
-  <div class="section-title">当前订单</div>
-  <div class="order" id="orderList">暂无商品</div>
+  <div class="section-title">当前订单</div>
+  <div class="order" id="orderList">暂无商品</div>
 
-  <div class="total" id="totalPrice">合计：0 元</div>
+  <div class="total" id="totalPrice">合计：0 元</div>
 </div>
 
 <script>
-  // 读取包厢
-  const params = new URLSearchParams(window.location.search);
-  const room = params.get("room");
-  document.getElementById("roomInfo").innerText =
-    room ? `当前包厢：${room}` : "未识别包厢";
+  // 读取包厢
+  const params = new URLSearchParams(window.location.search);
+  const room = params.get("room");
+  document.getElementById("roomInfo").innerText =
+    room ? `当前包厢：${room}` : "未识别包厢";
 
-  // 商品配置
-  const products = [
-    { id: 1, name: "可乐", price: 5 },
-    { id: 2, name: "雪碧", price: 5 },
-    { id: 3, name: "矿泉水", price: 3 },
-    { id: 4, name: "泡面", price: 8 }
-  ];
+  // 商品配置
+  const products = [
+    { id: 1, name: "可乐", price: 5 },
+    { id: 2, name: "雪碧", price: 5 },
+    { id: 3, name: "矿泉水", price: 3 },
+    { id: 4, name: "泡面", price: 8 }
+  ];
 
-  // 当前订单
-  const order = {};
+  // 当前订单
+  const order = {};
 
-  const itemsDiv = document.getElementById("items");
-  const orderListDiv = document.getElementById("orderList");
-  const totalPriceDiv = document.getElementById("totalPrice");
+  const itemsDiv = document.getElementById("items");
+  const orderListDiv = document.getElementById("orderList");
+  const totalPriceDiv = document.getElementById("totalPrice");
 
-  // 商品列表
-  products.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <span>${p.name}（${p.price} 元）</span>
-      <button>加入</button>
-    `;
-    div.querySelector("button").onclick = () => add(p);
-    itemsDiv.appendChild(div);
-  });
+  // 商品列表
+  products.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <span>${p.name}（${p.price} 元）</span>
+      <button>加入</button>
+    `;
+    div.querySelector("button").onclick = () => add(p);
+    itemsDiv.appendChild(div);
+  });
 
-  function add(product) {
-    if (!order[product.id]) {
-      order[product.id] = { ...product, count: 1 };
-    } else {
-      order[product.id].count++;
-    }
-    render();
-  }
+  function add(product) {
+    if (!order[product.id]) {
+      order[product.id] = { ...product, count: 1 };
+    } else {
+      order[product.id].count++;
+    }
+    render();
+  }
 
-  function sub(productId) {
-    if (!order[productId]) return;
-    order[productId].count--;
-    if (order[productId].count <= 0) {
-      delete order[productId];
-    }
-    render();
-  }
+  function sub(productId) {
+    if (!order[productId]) return;
+    order[productId].count--;
+    if (order[productId].count <= 0) {
+      delete order[productId];
+    }
+    render();
+  }
 
-  function render() {
-    orderListDiv.innerHTML = "";
-    let total = 0;
-    let empty = true;
+  function render() {
+    orderListDiv.innerHTML = "";
+    let total = 0;
+    let empty = true;
 
-    for (const id in order) {
-      empty = false;
-      const item = order[id];
-      const lineTotal = item.price * item.count;
-      total += lineTotal;
+    for (const id in order) {
+      empty = false;
+      const item = order[id];
+      const lineTotal = item.price * item.count;
+      total += lineTotal;
 
-      const div = document.createElement("div");
-      div.className = "order-item";
-      div.innerHTML = `
-        <span>${item.name} × ${item.count}</span>
-        <span class="controls">
-          <button onclick="sub(${id})">−</button>
-        </span>
-      `;
-      orderListDiv.appendChild(div);
-    }
+      const div = document.createElement("div");
+      div.className = "order-item";
+      div.innerHTML = `
+        <span>${item.name} × ${item.count}</span>
+        <span class="controls">
+          <button onclick="sub(${id})">−</button>
+        </span>
+      `;
+      orderListDiv.appendChild(div);
+    }
 
-    if (empty) {
-      orderListDiv.innerText = "暂无商品";
-    }
+    if (empty) {
+      orderListDiv.innerText = "暂无商品";
+    }
 
-    totalPriceDiv.innerText = `合计：${total} 元`;
-  }
+    totalPriceDiv.innerText = `合计：${total} 元`;
+  }
 </script>
 </body>
 </html>
