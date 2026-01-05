@@ -10,7 +10,6 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
       background: #f5f5f5;
       margin: 0;
-      padding: 0;
     }
 
     .container {
@@ -18,7 +17,7 @@
       margin: 0 auto;
       background: #ffffff;
       min-height: 100vh;
-      padding: 20px;
+      padding: 16px;
       box-sizing: border-box;
     }
 
@@ -32,43 +31,139 @@
       background: #e6f2ff;
       padding: 10px;
       border-radius: 6px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       font-size: 16px;
     }
 
-    .hint {
-      color: #888;
+    .section-title {
+      font-size: 18px;
+      margin: 16px 0 8px;
+      font-weight: bold;
+    }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .item button {
+      background: #409eff;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
       font-size: 14px;
-      margin-top: 20px;
+    }
+
+    .order {
+      background: #fafafa;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 16px;
+    }
+
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .total {
+      font-weight: bold;
+      margin-top: 10px;
+      text-align: right;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <div class="title">麻将馆点单系统</div>
+<div class="container">
+  <div class="title">麻将馆点单系统</div>
 
-    <div class="room" id="roomInfo">
-      正在识别包厢…
-    </div>
+  <div class="room" id="roomInfo"></div>
 
-    <div class="hint">
-      请扫描包厢内二维码进行操作
-    </div>
+  <div class="section-title">商品列表</div>
+  <div id="items"></div>
+
+  <div class="section-title">当前订单</div>
+  <div class="order" id="orderList">
+    暂无商品
   </div>
 
-  <script>
-    // 从 URL 中读取参数
-    const params = new URLSearchParams(window.location.search);
-    const room = params.get("room");
+  <div class="total" id="totalPrice">合计：0 元</div>
+</div>
 
-    const roomInfo = document.getElementById("roomInfo");
+<script>
+  // 读取包厢参数
+  const params = new URLSearchParams(window.location.search);
+  const room = params.get("room");
 
-    if (room) {
-      roomInfo.innerText = "当前包厢：" + room;
+  const roomInfo = document.getElementById("roomInfo");
+  roomInfo.innerText = room ? `当前包厢：${room}` : "未识别包厢";
+
+  // 商品定义（后续你只改这里）
+  const products = [
+    { id: 1, name: "可乐", price: 5 },
+    { id: 2, name: "雪碧", price: 5 },
+    { id: 3, name: "矿泉水", price: 3 },
+    { id: 4, name: "泡面", price: 8 }
+  ];
+
+  // 当前订单
+  const order = {};
+
+  const itemsDiv = document.getElementById("items");
+  const orderListDiv = document.getElementById("orderList");
+  const totalPriceDiv = document.getElementById("totalPrice");
+
+  // 渲染商品列表
+  products.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <span>${p.name}（${p.price} 元）</span>
+      <button>加入</button>
+    `;
+    div.querySelector("button").onclick = () => addToOrder(p);
+    itemsDiv.appendChild(div);
+  });
+
+  function addToOrder(product) {
+    if (!order[product.id]) {
+      order[product.id] = { ...product, count: 1 };
     } else {
-      roomInfo.innerText = "未识别包厢（请使用包厢二维码）";
+      order[product.id].count++;
     }
-  </script>
+    renderOrder();
+  }
+
+  function renderOrder() {
+    orderListDiv.innerHTML = "";
+    let total = 0;
+    let hasItem = false;
+
+    for (const id in order) {
+      hasItem = true;
+      const item = order[id];
+      const lineTotal = item.price * item.count;
+      total += lineTotal;
+
+      const div = document.createElement("div");
+      div.className = "order-item";
+      div.innerText = `${item.name} × ${item.count} = ${lineTotal} 元`;
+      orderListDiv.appendChild(div);
+    }
+
+    if (!hasItem) {
+      orderListDiv.innerText = "暂无商品";
+    }
+
+    totalPriceDiv.innerText = `合计：${total} 元`;
+  }
+</script>
 </body>
 </html>
