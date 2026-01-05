@@ -1,13 +1,74 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <title>麻将馆点单系统</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #ffffff;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .title {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .room {
+      background: #e6f2ff;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+
+    .hint {
+      color: #888;
+      font-size: 14px;
+      margin-top: 20px;
+    }
+  </style>
 </head>
+
 <body>
+  <div class="container">
+    <div class="title">麻将馆点单系统</div>
 
-  <h1>🎴 麻将馆点单系统</h1>
-  <p>如果你能看到这个页面，说明网页已经成功上线。</p>
+    <div class="room" id="roomInfo">
+      正在识别包厢…
+    </div>
 
+    <div class="hint">
+      请扫描包厢内二维码进行操作
+    </div>
+  </div>
+
+  <script>
+    // 从 URL 中读取参数
+    const params = new URLSearchParams(window.location.search);
+    const room = params.get("room");
+
+    const roomInfo = document.getElementById("roomInfo");
+
+    if (room) {
+      roomInfo.innerText = "当前包厢：" + room;
+    } else {
+      roomInfo.innerText = "未识别包厢（请使用包厢二维码）";
+    }
+  </script>
 </body>
 </html>
