@@ -90,12 +90,12 @@
       margin-top: 16px;
     }
 
-    .admin-summary {
-      background: #f0f9ff;
-      padding: 10px;
+    .admin-order {
+      background: #f9f9f9;
+      padding: 12px;
       border-radius: 6px;
-      margin-top: 16px;
-      border: 1px solid #d9ecff;
+      margin-bottom: 12px;
+      border-left: 4px solid #409eff;
     }
 
     .order-item {
@@ -110,11 +110,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-size: 14px;
-      padding: 8px;
-      background: #f9f9f9;
-      border-radius: 4px;
     }
 
     .controls button {
@@ -137,82 +134,90 @@
       font-size: 16px;
     }
 
-    .placeholder {
-      text-align: center;
-      padding: 40px 20px;
-      color: #999;
-      font-size: 16px;
-      background: #f9f9f9;
-      border-radius: 8px;
-      margin-top: 20px;
-    }
-
-    .room-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .room-tag {
-      background: #e6f2ff;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .room-tag:hover {
-      background: #d9ecff;
-      transform: translateY(-2px);
-    }
-
-    .room-tag.active {
-      background: #409eff;
+    .submit-btn {
+      background: #67c23a;
       color: white;
-      box-shadow: 0 2px 5px rgba(64, 158, 255, 0.3);
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      width: 100%;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
     }
 
     .admin-controls {
       display: flex;
       gap: 10px;
-      margin-top: 20px;
+      margin-top: 10px;
     }
 
-    .admin-controls button {
+    .admin-btn {
       flex: 1;
-      padding: 10px;
+      padding: 8px;
       border: none;
-      border-radius: 6px;
+      border-radius: 4px;
       font-size: 14px;
       cursor: pointer;
-      transition: all 0.3s;
     }
 
-    .admin-controls button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    .btn-paid {
+      background: #67c23a;
+      color: white;
     }
 
-    .btn-primary {
+    .btn-cancel {
+      background: #f56c6c;
+      color: white;
+    }
+
+    .btn-refresh {
       background: #409eff;
       color: white;
     }
 
-    .btn-secondary {
-      background: #f0f0f0;
-      color: #333;
+    .empty-orders {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+      font-size: 16px;
     }
 
-    .empty-room {
-      text-align: center;
-      padding: 20px;
+    .order-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+
+    .status-unpaid {
+      background: #fef0f0;
+      color: #f56c6c;
+    }
+
+    .status-paid {
+      background: #f0f9eb;
+      color: #67c23a;
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .order-time {
+      font-size: 12px;
       color: #999;
-      font-size: 14px;
-      background: #f9f9f9;
-      border-radius: 8px;
-      margin-top: 10px;
     }
   </style>
 </head>
@@ -228,60 +233,93 @@
   const room = params.get("room");
   const role = params.get("role");
   
-  const container = document.getElementById("container");
-  
-  // 定义所有16个包厢
-  const allRooms = [
+  // 16个有效包厢
+  const validRooms = [
     "V111", "V222", "V333", "V04", "V555", "V666", "V777", "V888",
     "V999", "V10", "U1", "U2", "U3", "U5", "U6", "U7"
   ];
   
-  // 判断是否为老板端
+  const container = document.getElementById("container");
   const isAdmin = role === "admin";
   
   if (isAdmin) {
-    // 初始化老板端
+    // 老板端
     initAdmin();
   } else {
-    // 初始化客户端
+    // 客户端
     initClient();
   }
   
+  // 本地存储键名
+  const STORAGE_KEY = "jiuyi_orders";
+  
+  // 获取所有订单
+  function getAllOrders() {
+    const ordersJson = localStorage.getItem(STORAGE_KEY);
+    return ordersJson ? JSON.parse(ordersJson) : [];
+  }
+  
+  // 保存订单
+  function saveOrder(order) {
+    const orders = getAllOrders();
+    orders.push(order);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+  }
+  
+  // 更新订单状态
+  function updateOrderStatus(orderId, status) {
+    const orders = getAllOrders();
+    const orderIndex = orders.findIndex(order => order.id === orderId);
+    if (orderIndex !== -1) {
+      orders[orderIndex].status = status;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+      return true;
+    }
+    return false;
+  }
+  
+  // 客户端初始化
   function initClient() {
-    // 客户端点单系统 - 原有逻辑
+    // 检查包厢是否有效
+    const isValidRoom = validRooms.includes(room);
+    
     container.innerHTML = `
       <div class="title">九易点单系统</div>
-      <div class="room" id="roomInfo"></div>
+      <div class="room" id="roomInfo">${isValidRoom ? `当前包厢：${room}` : '未识别包厢'}</div>
+      
       <div class="section-title">商品列表</div>
       <div id="items"></div>
+      
       <div class="section-title">当前订单</div>
       <div class="order" id="orderList">暂无商品</div>
+      
       <div class="total" id="totalPrice">合计：0 元</div>
+      
+      <button class="submit-btn" id="submitBtn" ${!isValidRoom ? 'disabled' : ''}>下单</button>
     `;
     
-    // 检查包厢是否有效
-    const isValidRoom = allRooms.includes(room);
-    document.getElementById("roomInfo").innerText =
-      isValidRoom ? `当前包厢：${room}` : "未识别包厢 (请使用有效包厢号)";
-
+    // 如果包厢无效，直接返回
+    if (!isValidRoom) {
+      return;
+    }
+    
     // 商品配置
     const products = [
       { id: 1, name: "可乐", price: 5 },
       { id: 2, name: "雪碧", price: 5 },
       { id: 3, name: "矿泉水", price: 3 },
-      { id: 4, name: "泡面", price: 8 },
-      { id: 5, name: "薯片", price: 6 },
-      { id: 6, name: "啤酒", price: 10 }
+      { id: 4, name: "泡面", price: 8 }
     ];
-
+    
     // 当前订单
-    const order = {};
-
+    let currentOrder = {};
+    
     const itemsDiv = document.getElementById("items");
     const orderListDiv = document.getElementById("orderList");
     const totalPriceDiv = document.getElementById("totalPrice");
-
-    // 商品列表
+    const submitBtn = document.getElementById("submitBtn");
+    
+    // 生成商品列表
     products.forEach(p => {
       const div = document.createElement("div");
       div.className = "item";
@@ -289,251 +327,234 @@
         <span>${p.name}（${p.price} 元）</span>
         <button>加入</button>
       `;
-      div.querySelector("button").onclick = () => add(p);
+      div.querySelector("button").onclick = () => addToOrder(p);
       itemsDiv.appendChild(div);
     });
-
-    function add(product) {
-      if (!order[product.id]) {
-        order[product.id] = { ...product, count: 1 };
+    
+    // 添加到订单
+    function addToOrder(product) {
+      if (!currentOrder[product.id]) {
+        currentOrder[product.id] = { ...product, count: 1 };
       } else {
-        order[product.id].count++;
+        currentOrder[product.id].count++;
       }
-      render();
+      renderOrder();
     }
-
-    function sub(productId) {
-      if (!order[productId]) return;
-      order[productId].count--;
-      if (order[productId].count <= 0) {
-        delete order[productId];
+    
+    // 减少商品数量
+    function removeFromOrder(productId) {
+      if (!currentOrder[productId]) return;
+      currentOrder[productId].count--;
+      if (currentOrder[productId].count <= 0) {
+        delete currentOrder[productId];
       }
-      render();
+      renderOrder();
     }
-
-    function render() {
+    
+    // 渲染订单
+    function renderOrder() {
       orderListDiv.innerHTML = "";
       let total = 0;
       let empty = true;
-
-      for (const id in order) {
+      
+      for (const id in currentOrder) {
         empty = false;
-        const item = order[id];
+        const item = currentOrder[id];
         const lineTotal = item.price * item.count;
         total += lineTotal;
-
+        
         const div = document.createElement("div");
         div.className = "order-item";
         div.innerHTML = `
           <span>${item.name} × ${item.count}</span>
           <span class="controls">
-            <button onclick="sub(${id})">−</button>
+            <button onclick="currentApp.sub(${id})">−</button>
           </span>
         `;
         orderListDiv.appendChild(div);
       }
-
+      
       if (empty) {
         orderListDiv.innerText = "暂无商品";
+        submitBtn.disabled = true;
+      } else {
+        submitBtn.disabled = false;
       }
-
+      
       totalPriceDiv.innerText = `合计：${total} 元`;
     }
     
-    // 将sub函数暴露给全局，供按钮点击调用
-    window.sub = sub;
+    // 下单功能
+    submitBtn.onclick = function() {
+      if (Object.keys(currentOrder).length === 0) {
+        alert("请先添加商品");
+        return;
+      }
+      
+      // 生成订单数据
+      const orderItems = [];
+      let total = 0;
+      
+      for (const id in currentOrder) {
+        const item = currentOrder[id];
+        const lineTotal = item.price * item.count;
+        total += lineTotal;
+        orderItems.push({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          count: item.count
+        });
+      }
+      
+      const order = {
+        id: Date.now(), // 使用时间戳作为订单ID
+        room: room,
+        items: orderItems,
+        total: total,
+        status: "unpaid", // unpaid, paid
+        time: new Date().toLocaleString()
+      };
+      
+      // 保存到本地存储
+      saveOrder(order);
+      
+      // 清空当前订单
+      currentOrder = {};
+      renderOrder();
+      
+      alert("下单成功！老板端已收到订单");
+    };
+    
+    // 暴露函数给全局
+    window.currentApp = {
+      sub: removeFromOrder
+    };
   }
   
+  // 老板端初始化
   function initAdmin() {
-    // 老板端管理系统
     container.innerHTML = `
       <div class="admin-title">九易点单系统 - 老板端</div>
-      <div class="admin-room" id="roomInfo">
-        <div>老板端管理面板</div>
-        <div style="font-size:14px; color:#666; margin-top:5px;">共 ${allRooms.length} 个包厢</div>
-      </div>
+      <div class="admin-room">老板管理面板 - 实时查看包厢订单</div>
       
-      <div class="admin-section-title">包厢列表</div>
-      <div class="room-list" id="roomList">
-        <!-- 包厢标签将动态生成 -->
-      </div>
+      <div class="admin-section-title">待处理订单</div>
+      <div id="ordersList" class="empty-orders">暂无待处理订单</div>
       
-      <div class="admin-section-title">今日订单汇总</div>
-      <div class="admin-summary" id="orderSummary">
-        <div class="empty-room" id="emptySummary">请点击上方包厢查看详情</div>
-      </div>
-      
-      <div class="admin-total" id="adminTotal">选择包厢查看订单详情</div>
-      
-      <div class="admin-section-title">管理功能</div>
-      <div class="placeholder" id="placeholder">
-        老板端功能开发中...<br>
-        后续版本将添加：<br>
-        • 实时查看各包厢订单<br>
-        • 商品库存管理<br>
-        • 销售数据统计<br>
-        • 员工管理
-      </div>
+      <div class="admin-section-title">今日总计</div>
+      <div class="admin-total" id="adminTotal">今日总收入：0 元</div>
       
       <div class="admin-controls">
-        <button class="btn-secondary" onclick="window.location.href='?'">返回客户点单</button>
-        <button class="btn-primary" onclick="refreshData()">刷新所有数据</button>
+        <button class="admin-btn btn-refresh" onclick="refreshOrders()">刷新订单</button>
+        <button class="admin-btn btn-secondary" onclick="window.location.href='?'">返回客户点单</button>
       </div>
     `;
     
-    // 动态生成包厢列表
-    const roomListDiv = document.getElementById("roomList");
+    // 初始加载订单
+    loadOrders();
     
-    // 添加"所有包厢"标签
-    const allRoomsTag = document.createElement("div");
-    allRoomsTag.className = "room-tag active";
-    allRoomsTag.textContent = "所有包厢";
-    allRoomsTag.addEventListener('click', () => showAllRoomsSummary());
-    roomListDiv.appendChild(allRoomsTag);
-    
-    // 添加16个包厢标签
-    allRooms.forEach(roomName => {
-      const roomTag = document.createElement("div");
-      roomTag.className = "room-tag";
-      roomTag.textContent = roomName;
-      roomTag.addEventListener('click', () => showRoomSummary(roomName));
-      roomListDiv.appendChild(roomTag);
-    });
-    
-    // 初始化显示所有包厢汇总
-    showAllRoomsSummary();
-    
-    // 为所有包厢标签添加点击事件（使用事件委托）
-    roomListDiv.addEventListener('click', function(e) {
-      if (e.target.classList.contains('room-tag')) {
-        // 移除所有标签的active类
-        const allTags = roomListDiv.querySelectorAll('.room-tag');
-        allTags.forEach(tag => tag.classList.remove('active'));
-        // 为当前点击的标签添加active类
-        e.target.classList.add('active');
+    // 监听storage变化，实现实时更新
+    window.addEventListener('storage', function(e) {
+      if (e.key === STORAGE_KEY) {
+        loadOrders();
       }
     });
   }
   
-  // 显示所有包厢汇总
-  function showAllRoomsSummary() {
-    // 模拟所有包厢的总订单数据
-    const orderSummaryDiv = document.getElementById("orderSummary");
+  // 加载订单
+  function loadOrders() {
+    const orders = getAllOrders();
+    const ordersListDiv = document.getElementById("ordersList");
     const adminTotalDiv = document.getElementById("adminTotal");
     
-    // 生成模拟数据
-    const products = [
-      { name: "可乐", base: 15 },
-      { name: "雪碧", base: 12 },
-      { name: "矿泉水", base: 8 },
-      { name: "泡面", base: 5 },
-      { name: "薯片", base: 10 },
-      { name: "啤酒", base: 7 }
-    ];
+    // 过滤未支付订单
+    const unpaidOrders = orders.filter(order => order.status === "unpaid");
+    const paidOrders = orders.filter(order => order.status === "paid");
     
+    // 计算总收入
     let totalRevenue = 0;
-    const priceMap = { "可乐": 5, "雪碧": 5, "矿泉水": 3, "泡面": 8, "薯片": 6, "啤酒": 10 };
-    
-    let summaryHTML = '';
-    products.forEach(product => {
-      // 随机生成一些变化
-      const randomFactor = Math.floor(Math.random() * 5) + 1;
-      const quantity = product.base * randomFactor;
-      const revenue = quantity * priceMap[product.name];
-      totalRevenue += revenue;
-      
-      summaryHTML += `
-        <div class="admin-order-item">
-          <span>${product.name}</span>
-          <span>${quantity} 件 × ${priceMap[product.name]}元 = ${revenue}元</span>
-        </div>
-      `;
+    paidOrders.forEach(order => {
+      totalRevenue += order.total;
     });
     
-    orderSummaryDiv.innerHTML = summaryHTML;
-    adminTotalDiv.textContent = `今日总收入：${totalRevenue} 元 (所有包厢)`;
-  }
-  
-  // 显示单个包厢汇总
-  function showRoomSummary(roomName) {
-    const orderSummaryDiv = document.getElementById("orderSummary");
-    const adminTotalDiv = document.getElementById("adminTotal");
-    
-    // 根据包厢名称生成不同的模拟数据
-    // 使用房间号作为随机种子，确保相同房间每次点击显示相同数据
-    let seed = 0;
-    for (let i = 0; i < roomName.length; i++) {
-      seed += roomName.charCodeAt(i);
-    }
-    
-    // 简单的伪随机生成器
-    const random = (max) => (seed * 9301 + 49297) % 233280 % max;
-    
-    const products = [
-      { name: "可乐", base: 2 },
-      { name: "雪碧", base: 1 },
-      { name: "矿泉水", base: 1 },
-      { name: "泡面", base: 1 },
-      { name: "薯片", base: 1 },
-      { name: "啤酒", base: 1 }
-    ];
-    
-    const priceMap = { "可乐": 5, "雪碧": 5, "矿泉水": 3, "泡面": 8, "薯片": 6, "啤酒": 10 };
-    
-    let summaryHTML = '';
-    let totalRevenue = 0;
-    
-    products.forEach(product => {
-      // 使用种子生成确定但随机的数量
-      const quantity = Math.max(0, Math.floor(random(10))) + product.base;
-      if (quantity > 0) {
-        const revenue = quantity * priceMap[product.name];
-        totalRevenue += revenue;
-        
-        summaryHTML += `
-          <div class="admin-order-item">
-            <span>${product.name}</span>
-            <span>${quantity} 件 × ${priceMap[product.name]}元 = ${revenue}元</span>
-          </div>
-        `;
-      }
-    });
-    
-    if (summaryHTML === '') {
-      orderSummaryDiv.innerHTML = `<div class="empty-room">${roomName} 包厢今日暂无订单</div>`;
-      adminTotalDiv.textContent = `${roomName} 包厢：0 元`;
+    // 显示订单
+    if (unpaidOrders.length === 0) {
+      ordersListDiv.innerHTML = '<div class="empty-orders">暂无待处理订单</div>';
     } else {
-      orderSummaryDiv.innerHTML = summaryHTML;
-      adminTotalDiv.textContent = `${roomName} 包厢：${totalRevenue} 元`;
+      ordersListDiv.innerHTML = '';
+      unpaidOrders.forEach(order => {
+        const orderDiv = document.createElement("div");
+        orderDiv.className = "admin-order";
+        orderDiv.id = `order-${order.id}`;
+        
+        // 订单头部
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "order-header";
+        headerDiv.innerHTML = `
+          <strong>${order.room} 包厢</strong>
+          <span class="order-time">${order.time}</span>
+          <span class="order-status status-unpaid">待支付</span>
+        `;
+        
+        // 商品列表
+        const itemsDiv = document.createElement("div");
+        itemsDiv.className = "admin-order-items";
+        order.items.forEach(item => {
+          const itemDiv = document.createElement("div");
+          itemDiv.className = "admin-order-item";
+          itemDiv.innerHTML = `
+            <span>${item.name}</span>
+            <span>${item.count} × ${item.price}元 = ${item.count * item.price}元</span>
+          `;
+          itemsDiv.appendChild(itemDiv);
+        });
+        
+        // 订单总计和控制按钮
+        const totalDiv = document.createElement("div");
+        totalDiv.className = "admin-total";
+        totalDiv.innerHTML = `合计：${order.total} 元`;
+        
+        const controlsDiv = document.createElement("div");
+        controlsDiv.className = "admin-controls";
+        controlsDiv.innerHTML = `
+          <button class="admin-btn btn-paid" onclick="markAsPaid('${order.id}')">已支付</button>
+          <button class="admin-btn btn-cancel" onclick="deleteOrder('${order.id}')">删除</button>
+        `;
+        
+        orderDiv.appendChild(headerDiv);
+        orderDiv.appendChild(itemsDiv);
+        orderDiv.appendChild(totalDiv);
+        orderDiv.appendChild(controlsDiv);
+        ordersListDiv.appendChild(orderDiv);
+      });
+    }
+    
+    // 更新总收入
+    adminTotalDiv.textContent = `今日总收入：${totalRevenue} 元`;
+  }
+  
+  // 标记为已支付
+  function markAsPaid(orderId) {
+    if (updateOrderStatus(orderId, "paid")) {
+      loadOrders();
+      alert("订单已标记为已支付");
     }
   }
   
-  // 老板端刷新数据函数
-  function refreshData() {
-    if (!isAdmin) return;
-    
-    const placeholder = document.getElementById('placeholder');
-    const originalText = placeholder.innerHTML;
-    placeholder.innerHTML = '正在刷新数据...';
-    placeholder.style.color = '#409eff';
-    
-    // 模拟网络请求延迟
-    setTimeout(() => {
-      placeholder.innerHTML = originalText;
-      placeholder.style.color = '#999';
-      
-      // 重新计算当前显示的数据
-      const activeTag = document.querySelector('.room-tag.active');
-      if (activeTag) {
-        if (activeTag.textContent === '所有包厢') {
-          showAllRoomsSummary();
-        } else {
-          showRoomSummary(activeTag.textContent);
-        }
-      }
-      
-      alert('数据已刷新！');
-    }, 800);
+  // 删除订单
+  function deleteOrder(orderId) {
+    if (confirm("确定要删除这个订单吗？")) {
+      const orders = getAllOrders();
+      const filteredOrders = orders.filter(order => order.id != orderId);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredOrders));
+      loadOrders();
+    }
+  }
+  
+  // 刷新订单
+  function refreshOrders() {
+    loadOrders();
+    alert("订单已刷新");
   }
 </script>
 </body>
