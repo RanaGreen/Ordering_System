@@ -1,122 +1,287 @@
-<!DOCTYPE html><html lang="zh-CN">
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>棋牌室计时 + 点单系统（工程化迭代版）</title>
+  <title>棋牌室计时＋点单系统</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#111; color:#eee; margin:0; padding:16px; }
-    h1,h2,h3 { margin:8px 0; }
-    .card { background:#1e1e1e; border-radius:8px; padding:16px; margin-bottom:16px; }
-    .row { display:flex; justify-content:space-between; align-items:center; margin:6px 0; gap:8px; }
-    button { padding:8px 12px; border-radius:6px; border:none; background:#2d7cff; color:white; font-size:14px; cursor:pointer; }
-    button.secondary { background:#555; }
-    button.danger { background:#c0392b; }
-    button:disabled { opacity:0.4; cursor:not-allowed; }
-    input, select { padding:6px; border-radius:4px; border:none; }
-    .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; }
-    .muted { color:#aaa; font-size:12px; }
+    body {
+      margin: 0;
+      background: #111;
+      color: #fff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont;
+    }
+    h1, h2, h3 { margin: 0.5em 0; }
+    button {
+      padding: 8px 12px;
+      margin: 4px;
+      background: #2d8cf0;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button.secondary { background: #666; }
+    button.danger { background: #c0392b; }
+    .container { padding: 16px; }
+    .card {
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #1c1c1c;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .room-btn {
+      padding: 12px;
+      background: #333;
+    }
+    .room-btn.active {
+      background: #27ae60;
+    }
+    .muted {
+      color: #aaa;
+      font-size: 14px;
+    }
+    input, select {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
+<div id="app"></div>
+
 <script>
-/**********************
- * 一、系统配置（未来可由后端下发）
- **********************/
-const CONFIG = {
-  ROOMS: Array.from({ length: 16 }, (_, i) => String(i + 1)),
-  ROOM_TYPES: {
-    small: { name: '小包', price: 40 },
-    medium: { name: '中包', price: 70 },
-    large: { name: '大包', price: 90 }
-  },
-  BASE_HOURS_DEFAULT: 5,
-  OVER_TIME_PRICE: 20,
-  DISCOUNTS: [
-    { label: '无减免', value: 0 },
-    { label: '熟人减免10元', value: 10 },
-    { label: '活动减免20元', value: 20 }
-  ],
-  PAY_METHODS: ['微信', '支付宝', '美团'],
-  PRODUCTS: [
-    { id: 'cola', name: '可乐', price: 5 },
-    { id: 'water', name: '矿泉水', price: 3 },
-    { id: 'snack', name: '零食', price: 10 }
+/* =======================
+   全局基础配置
+======================= */
+
+const ROOMS = Array.from({ length: 16 }, (_, i) => String(i + 1))
+const ROOM_TYPES = {
+  small: { name: '小包', price: 40 },
+  mid: { name: '中包', price: 70 },
+  large: { name: '大包', price: 90 }
+}
+const EXTRA_PER_HOUR = 20
+
+/* =======================
+   模拟“服务器状态”
+   （未来上云后整体替换）
+======================= */
+
+const Store = {
+  rooms: {}, // roomId -> order
+}
+
+function now() {
+  return new Date().toLocaleString()
+}
+
+/* =======================
+   路由判断
+======================= */
+
+const params = new URLSearchParams(location.search)
+const role = params.get('role')
+const room = params.get('room')
+
+const app = document.getElementById('app')
+
+if (role === 'admin') {
+  renderAdmin()
+} else if (room) {
+  renderClient(room)
+} else {
+  renderEntry()
+}
+
+/* =======================
+   入口页
+======================= */
+
+function renderEntry() {
+  app.innerHTML = `
+    <div class="container">
+      <h1>棋牌室计时＋点单系统</h1>
+      <div class="card">
+        <p>老板端：</p>
+        <code>?role=admin</code>
+      </div>
+      <div class="card">
+        <p>客户端：</p>
+        <code>?room=1 ~ 16</code>
+      </div>
+      <p class="muted">当前为单文件演示版（GitHub Pages）</p>
+    </div>
+  `
+}
+
+/* =======================
+   客户端
+======================= */
+
+function renderClient(roomId) {
+  if (!ROOMS.includes(roomId)) {
+    app.innerHTML = `<div class="container"><h2>非法包厢号</h2></div>`
+    return
+  }
+
+  const goods = [
+    { name: '矿泉水', price: 5 },
+    { name: '可乐', price: 6 },
+    { name: '红牛', price: 8 },
   ]
-};/**********************
 
-二、存储层（当前 localStorage，未来可整体替换为后端） **********************/ const DB = { active(room) { return JSON.parse(localStorage.getItem(active_${room})); }, saveActive(room, data) { localStorage.setItem(active_${room}, JSON.stringify(data)); }, clearActive(room) { localStorage.removeItem(active_${room}); }, history() { return JSON.parse(localStorage.getItem('history')) || []; }, saveHistory(list) { localStorage.setItem('history', JSON.stringify(list)); } };
+  let cart = {}
 
+  function render() {
+    app.innerHTML = `
+      <div class="container">
+        <h2>包厢 ${roomId} 点单</h2>
+        ${goods.map(g => `
+          <div class="card">
+            ${g.name} ￥${g.price}
+            <button onclick="add('${g.name}', ${g.price})">＋</button>
+            <button class="secondary" onclick="sub('${g.name}')">－</button>
+            <span> ${cart[g.name]?.qty || 0}</span>
+          </div>
+        `).join('')}
+        <button onclick="submit()">提交点单</button>
+      </div>
+    `
+  }
 
-/**********************
+  window.add = (name, price) => {
+    cart[name] = cart[name] || { price, qty: 0 }
+    cart[name].qty++
+    render()
+  }
 
-三、业务逻辑层（不涉及 UI） **********************/ const Service = { openOrder(data) { DB.saveActive(data.room, data); },
+  window.sub = (name) => {
+    if (cart[name]) {
+      cart[name].qty--
+      if (cart[name].qty <= 0) delete cart[name]
+      render()
+    }
+  }
 
+  window.submit = () => {
+    if (!Store.rooms[roomId]) {
+      alert('该包厢尚未开台')
+      return
+    }
+    Store.rooms[roomId].orders.push({
+      time: now(),
+      items: JSON.parse(JSON.stringify(cart))
+    })
+    cart = {}
+    alert('点单已提交')
+    render()
+  }
 
-addProduct(room, product) { const order = DB.active(room); order.products.push({ ...product, time: Date.now() }); DB.saveActive(room, order); },
+  render()
+}
 
-calc(order) { const now = Date.now(); const usedHours = (now - order.startTime) / 3600000; const overtime = Math.max(0, Math.ceil(usedHours - order.baseHours)); const timeFee = order.basePrice + overtime * CONFIG.OVER_TIME_PRICE - order.discount; const productFee = order.products.reduce((s, p) => s + p.price, 0); return { timeFee, productFee, total: timeFee + productFee, overtime }; },
+/* =======================
+   老板端
+======================= */
 
-close(room, isPaid) { const order = DB.active(room); const bill = Service.calc(order); const history = DB.history(); history.push({ ...order, bill, paid: isPaid, endTime: Date.now() }); DB.saveHistory(history); DB.clearActive(room); } };
+function renderAdmin() {
+  function render() {
+    app.innerHTML = `
+      <div class="container">
+        <h1>老板端</h1>
 
-/**********************
+        <div class="card">
+          <h3>开台</h3>
+          <label>包厢号
+            <select id="roomSelect">
+              ${ROOMS.map(r => `<option>${r}</option>`).join('')}
+            </select>
+          </label>
+          <label>包厢类型
+            <select id="typeSelect">
+              ${Object.keys(ROOM_TYPES).map(k =>
+                `<option value="${k}">${ROOM_TYPES[k].name}</option>`
+              ).join('')}
+            </select>
+          </label>
+          <button onclick="openRoom()">确认开台</button>
+        </div>
 
-四、路由 **********************/ const params = new URLSearchParams(location.search); const room = params.get('room'); const role = params.get('role');
+        <div class="card">
+          <h3>包厢一览</h3>
+          <div class="grid">
+            ${ROOMS.map(r => `
+              <button class="room-btn ${Store.rooms[r] ? 'active' : ''}"
+                onclick="viewRoom('${r}')">
+                ${r}
+              </button>
+            `).join('')}
+          </div>
+        </div>
 
+        <div id="detail"></div>
+      </div>
+    `
+  }
 
-if (role === 'admin') initAdmin(); else if (room) initClient(room); else document.body.innerHTML = '<h2>无效访问</h2>';
+  window.openRoom = () => {
+    const roomId = document.getElementById('roomSelect').value
+    const typeKey = document.getElementById('typeSelect').value
+    if (Store.rooms[roomId]) {
+      alert('该包厢已开台')
+      return
+    }
+    Store.rooms[roomId] = {
+      roomId,
+      type: ROOM_TYPES[typeKey],
+      start: now(),
+      orders: []
+    }
+    render()
+  }
 
-/**********************
+  window.viewRoom = (roomId) => {
+    const r = Store.rooms[roomId]
+    if (!r) return
+    const totalOrder = r.orders.reduce((sum, o) => {
+      return sum + Object.values(o.items).reduce((s, i) => s + i.price * i.qty, 0)
+    }, 0)
 
-五、客户端（点单端） **********************/ function initClient(room) { document.body.innerHTML = <h1>包厢 ${room} 点单</h1>; const order = DB.active(room); if (!order) { document.body.innerHTML += <p class="muted">包厢尚未开台</p>; return; }
+    document.getElementById('detail').innerHTML = `
+      <div class="card">
+        <h3>包厢 ${roomId}</h3>
+        <p>开台时间：${r.start}</p>
+        <p>基础价格：￥${r.type.price}</p>
+        <p>点单金额：￥${totalOrder}</p>
+        <p><b>合计：￥${r.type.price + totalOrder}</b></p>
+        <button onclick="closeRoom('${roomId}')">收工</button>
+        <button class="danger" onclick="cancelRoom('${roomId}')">撤销</button>
+      </div>
+    `
+  }
 
+  window.closeRoom = (roomId) => {
+    delete Store.rooms[roomId]
+    document.getElementById('detail').innerHTML = ''
+    render()
+  }
 
-const card = document.createElement('div'); card.className = 'card'; card.innerHTML = '<h2>选择商品</h2>';
+  window.cancelRoom = window.closeRoom
 
-const selections = {};
-
-CONFIG.PRODUCTS.forEach(p => { const row = document.createElement('div'); row.className = 'row'; row.innerHTML = <span>${p.name} ¥${p.price}</span>; const btn = document.createElement('button'); btn.textContent = '加入'; btn.onclick = () => { selections[p.id] = (selections[p.id] || 0) + 1; alert(${p.name} x${selections[p.id]}); }; row.appendChild(btn); card.appendChild(row); });
-
-const submit = document.createElement('button'); submit.textContent = '提交点单（通知老板）'; submit.onclick = () => { alert('点单已提交，请等待老板确认'); };
-
-card.appendChild(submit); document.body.appendChild(card); }
-
-/**********************
-
-六、老板端（核心管理端） **********************/ function initAdmin() { document.body.innerHTML = '<h1>老板端 · 包厢管理</h1>';
-
-
-// 开台 const openCard = document.createElement('div'); openCard.className = 'card'; openCard.innerHTML = '<h2>开台</h2>';
-
-const roomSel = select(CONFIG.ROOMS); const typeSel = select(Object.keys(CONFIG.ROOM_TYPES)); const priceInput = input(); const hourInput = input(CONFIG.BASE_HOURS_DEFAULT); const discountSel = select(CONFIG.DISCOUNTS.map(d => d.label)); const paySel = select(CONFIG.PAY_METHODS);
-
-typeSel.onchange = () => priceInput.value = CONFIG.ROOM_TYPES[typeSel.value].price; typeSel.dispatchEvent(new Event('change'));
-
-openCard.append( labelRow('包厢', roomSel), labelRow('类型', typeSel), labelRow('基础价格', priceInput), labelRow('基础时长(h)', hourInput), labelRow('减免', discountSel), labelRow('支付方式', paySel) );
-
-const openBtn = document.createElement('button'); openBtn.textContent = '确认开台'; openBtn.onclick = () => { const room = roomSel.value; if (DB.active(room)) return alert('该包厢已开台'); Service.openOrder({ room, type: typeSel.value, basePrice: Number(priceInput.value), baseHours: Number(hourInput.value), discount: CONFIG.DISCOUNTS[discountSel.selectedIndex].value, payMethod: paySel.value, startTime: Date.now(), products: [] }); location.reload(); }; openCard.appendChild(openBtn); document.body.appendChild(openCard);
-
-// 包厢一览 const list = document.createElement('div'); list.className = 'card'; list.innerHTML = '<h2>包厢一览</h2>';
-
-const grid = document.createElement('div'); grid.className = 'grid';
-
-CONFIG.ROOMS.forEach(r => { const btn = document.createElement('button'); btn.textContent = 包厢 ${r}; if (!DB.active(r)) btn.disabled = true; btn.onclick = () => showDetail(r); grid.appendChild(btn); });
-
-list.appendChild(grid); document.body.appendChild(list); }
-
-function showDetail(room) { const order = DB.active(room); const bill = Service.calc(order);
-
-const detail = document.createElement('div'); detail.className = 'card'; detail.innerHTML = <h2>包厢 ${room} 详情</h2> <p>开台时间：${new Date(order.startTime).toLocaleString()}</p> <p>剩余套餐时长：${Math.max(0, order.baseHours - ((Date.now()-order.startTime)/3600000)).toFixed(2)} h</p> <p>商品数：${order.products.length}</p> <h3>费用</h3> <p>包厢费用：¥${bill.timeFee}</p> <p>商品费用：¥${bill.productFee}</p> <h3>合计：¥${bill.total}</h3>;
-
-const finish = document.createElement('button'); finish.textContent = '收工（已结账）'; finish.onclick = () => { Service.close(room, true); location.reload(); };
-
-const cancel = document.createElement('button'); cancel.className = 'secondary'; cancel.textContent = '撤销（未结账）'; cancel.onclick = () => { Service.close(room, false); location.reload(); };
-
-detail.append(finish, cancel); document.body.appendChild(detail); }
-
-/**********************
-
-工具函数 **********************/ function select(arr) { const s = document.createElement('select'); arr.forEach(v => { const o = document.createElement('option'); o.textContent = v; s.appendChild(o); }); return s; } function input(v='') { const i = document.createElement('input'); i.value = v; return i; } function labelRow(label, el) { const row = document.createElement('div'); row.className = 'row'; row.innerHTML = <span>${label}</span>; row.appendChild(el); return row; } </script>
-
-
+  render()
+}
+</script>
 </body>
 </html>
