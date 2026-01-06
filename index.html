@@ -3,324 +3,202 @@
 <head>
 <meta charset="UTF-8">
 <title>棋牌室计时 + 点单系统</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #111;
-  color: #eee;
-}
-
-.hidden { display: none; }
-
-h2 { margin-top: 0; }
-
-button {
-  cursor: pointer;
-}
-
-/* ===== 公共 ===== */
-.container {
-  padding: 15px;
-}
-
-/* ===== 客户端 ===== */
-.products {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
-}
-
-.product {
-  background: #1f1f1f;
-  border-radius: 10px;
-  padding: 12px;
-  text-align: center;
-}
-
-.product-name { font-size: 15px; }
-.product-price { color: #aaa; margin: 6px 0; }
-
-.add-btn {
-  background: #2ecc71;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 16px;
-}
-
-/* ===== 购物车 ===== */
-.cart {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #1a1a1a;
-  border-top: 1px solid #333;
-  padding: 10px;
-}
-
-.cart-items {
-  max-height: 90px;
-  overflow-y: auto;
-  font-size: 14px;
-}
-
-.cart-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.cart-total {
-  text-align: right;
-  margin-top: 6px;
-  font-size: 16px;
-}
-
-.submit-btn {
-  width: 100%;
-  margin-top: 8px;
-  padding: 10px;
-  background: #3498db;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  color: #fff;
-}
-
-/* ===== 老板端 ===== */
-.room-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.room-btn {
-  padding: 10px;
-  border-radius: 6px;
-  background: #333;
-  border: none;
-  color: #fff;
-}
-
-.room-btn.active {
-  background: #27ae60;
-}
-
-.panel {
-  background: #1f1f1f;
-  border-radius: 10px;
-  padding: 10px;
-  margin-top: 10px;
-}
-
-input, select {
-  width: 100%;
-  padding: 6px;
-  margin-bottom: 6px;
-  border-radius: 4px;
-  border: none;
-}
+body { margin:0; font-family:system-ui; background:#111; color:#eee; padding:16px }
+h1,h2,h3 { margin:8px 0 }
+.card { background:#1e1e1e; border-radius:8px; padding:16px; margin-bottom:16px }
+.row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:6px 0 }
+button { padding:8px 12px; border:none; border-radius:6px; background:#2d7cff; color:#fff; cursor:pointer }
+button.secondary { background:#555 }
+button.danger { background:#c0392b }
+button:disabled { opacity:.4 }
+input,select { padding:6px; border-radius:4px; border:none }
+.grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px }
+.muted { color:#aaa; font-size:12px }
 </style>
 </head>
-
 <body>
 
-<!-- ===== 客户端 ===== -->
-<div id="client" class="container hidden">
-  <h2>包厢 <span id="roomLabel"></span> 点单</h2>
-  <div class="products" id="productList"></div>
-</div>
-
-<div id="cart" class="cart hidden">
-  <div>购物车</div>
-  <div class="cart-items" id="cartItems"></div>
-  <div class="cart-total">合计 ¥<span id="cartTotal">0</span></div>
-  <button class="submit-btn" onclick="submitOrder()">提交点单</button>
-</div>
-
-<!-- ===== 老板端 ===== -->
-<div id="admin" class="container hidden">
-  <h2>老板端</h2>
-
-  <button onclick="showOpen()">➕ 开台</button>
-
-  <div class="panel hidden" id="openPanel">
-    <div>包厢号</div>
-    <select id="openRoom"></select>
-
-    <div>基础价格</div>
-    <input id="basePrice" type="number" value="70">
-
-    <div>基础时长（小时）</div>
-    <input id="baseHours" type="number" value="5">
-
-    <div>超时每小时费用</div>
-    <input id="extraPrice" type="number" value="20">
-
-    <button onclick="confirmOpen()">确认开台</button>
-  </div>
-
-  <h3>包厢一览</h3>
-  <div class="room-grid" id="roomGrid"></div>
-
-  <div class="panel hidden" id="roomDetail"></div>
-</div>
-
 <script>
-/* ===== 基础数据 ===== */
-const params = new URLSearchParams(location.search);
-const roomParam = params.get("room");
-const role = params.get("role");
+/************** 基础配置 **************/
+const CONFIG = {
+  ROOMS: Array.from({length:16},(_,i)=>String(i+1)),
+  ROOM_TYPES: {
+    small:{name:'小包',price:40},
+    medium:{name:'中包',price:70},
+    large:{name:'大包',price:90}
+  },
+  PRODUCTS:[
+    {id:'water',name:'矿泉水',price:3},
+    {id:'cola',name:'可乐',price:5},
+    {id:'snack',name:'零食',price:10}
+  ],
+  DISCOUNTS:[
+    {label:'无减免',value:0},
+    {label:'熟人减免10元',value:10},
+    {label:'活动减免20元',value:20}
+  ],
+  PAY_METHODS:['微信','支付宝','美团']
+};
 
-const products = [
-  {id:1,name:"矿泉水",price:3},
-  {id:2,name:"可乐",price:5},
-  {id:3,name:"红牛",price:8},
-  {id:4,name:"泡面",price:6},
-  {id:5,name:"瓜子",price:10},
-];
+/************** 本地存储 **************/
+const DB = {
+  active: r => JSON.parse(localStorage.getItem('active_'+r)),
+  saveActive:(r,d)=>localStorage.setItem('active_'+r,JSON.stringify(d)),
+  clearActive:r=>localStorage.removeItem('active_'+r),
+  history:()=>JSON.parse(localStorage.getItem('history')||'[]'),
+  saveHistory:l=>localStorage.setItem('history',JSON.stringify(l))
+};
 
-let cart = {};
-let rooms = JSON.parse(localStorage.getItem("rooms")||"{}");
-let orders = JSON.parse(localStorage.getItem("orders")||"{}");
+/************** 业务逻辑 **************/
+const Service = {
+  open(order){ DB.saveActive(order.room,order) },
+  addProduct(room,items){
+    const o=DB.active(room); if(!o)return;
+    items.forEach(i=>o.products.push({...i,time:Date.now()}));
+    DB.saveActive(room,o);
+  },
+  calc(o){
+    const used=(Date.now()-o.start)/3600000;
+    const overtime=Math.max(0,Math.ceil(used-o.baseHours));
+    const roomFee=o.basePrice+o.overPrice*overtime-o.discount;
+    const productFee=o.products.reduce((s,p)=>s+p.price,0);
+    return {roomFee,productFee,total:roomFee+productFee,overtime};
+  },
+  close(room,paid){
+    const o=DB.active(room); if(!o)return;
+    const bill=this.calc(o);
+    const h=DB.history();
+    h.push({...o,bill,paid,end:Date.now()});
+    DB.saveHistory(h);
+    DB.clearActive(room);
+  }
+};
 
-/* ===== 客户端 ===== */
-function initClient(room) {
-  document.getElementById("client").classList.remove("hidden");
-  document.getElementById("cart").classList.remove("hidden");
-  document.getElementById("roomLabel").innerText = room;
+/************** 路由 **************/
+const p=new URLSearchParams(location.search);
+const room=p.get('room');
+const role=p.get('role');
 
-  const list = document.getElementById("productList");
-  products.forEach(p=>{
-    const d=document.createElement("div");
-    d.className="product";
-    d.innerHTML=`<div class="product-name">${p.name}</div>
-    <div class="product-price">¥${p.price}</div>
-    <button class="add-btn" onclick="add(${p.id})">＋</button>`;
-    list.appendChild(d);
+if(role==='admin') admin();
+else if(room) client(room);
+else document.body.innerHTML='<h2>请使用 ?role=admin 或 ?room=1~16</h2>';
+
+/************** 客户端 **************/
+function client(room){
+  document.body.innerHTML=`<h1>包厢 ${room} 点单</h1>`;
+  const o=DB.active(room);
+  if(!o){document.body.innerHTML+='<p class="muted">包厢未开台</p>';return;}
+
+  const card=document.createElement('div'); card.className='card';
+  card.innerHTML='<h2>商品区</h2>';
+  const cart={};
+
+  CONFIG.PRODUCTS.forEach(p=>{
+    const r=document.createElement('div'); r.className='row';
+    r.innerHTML=`<span>${p.name} ¥${p.price}</span>`;
+    const b=document.createElement('button'); b.textContent='＋';
+    b.onclick=()=>{cart[p.id]=(cart[p.id]||0)+1};
+    r.appendChild(b); card.appendChild(r);
   });
-}
 
-function add(id){
-  cart[id]=(cart[id]||0)+1;
-  renderCart();
-}
-
-function remove(id){
-  cart[id]--;
-  if(cart[id]<=0) delete cart[id];
-  renderCart();
-}
-
-function renderCart(){
-  const box=document.getElementById("cartItems");
-  box.innerHTML="";
-  let total=0;
-  for(let id in cart){
-    const p=products.find(x=>x.id==id);
-    const sub=p.price*cart[id];
-    total+=sub;
-    const r=document.createElement("div");
-    r.className="cart-item";
-    r.innerHTML=`${p.name}×${cart[id]} ¥${sub}
-    <button onclick="remove(${id})">－</button>`;
-    box.appendChild(r);
-  }
-  document.getElementById("cartTotal").innerText=total;
-}
-
-function submitOrder(){
-  if(!orders[roomParam]) orders[roomParam]=[];
-  orders[roomParam].push({time:new Date().toLocaleString(),cart});
-  localStorage.setItem("orders",JSON.stringify(orders));
-  cart={};
-  renderCart();
-  alert("点单已提交");
-}
-
-/* ===== 老板端 ===== */
-function initAdmin(){
-  document.getElementById("admin").classList.remove("hidden");
-
-  const grid=document.getElementById("roomGrid");
-  const select=document.getElementById("openRoom");
-
-  for(let i=1;i<=16;i++){
-    const b=document.createElement("button");
-    b.className="room-btn"+(rooms[i]?" active":"");
-    b.innerText="包厢 "+i;
-    b.onclick=()=>showRoom(i);
-    grid.appendChild(b);
-
-    const o=document.createElement("option");
-    o.value=i;
-    o.innerText=i;
-    select.appendChild(o);
-  }
-}
-
-function showOpen(){
-  document.getElementById("openPanel").classList.toggle("hidden");
-}
-
-function confirmOpen(){
-  const r=openRoom.value;
-  rooms[r]={
-    start:Date.now(),
-    base:basePrice.value,
-    hours:baseHours.value,
-    extra:extraPrice.value
+  const submit=document.createElement('button');
+  submit.textContent='提交点单';
+  submit.onclick=()=>{
+    const items=[];
+    Object.entries(cart).forEach(([id,qty])=>{
+      const p=CONFIG.PRODUCTS.find(x=>x.id===id);
+      for(let i=0;i<qty;i++)items.push(p);
+    });
+    Service.addProduct(room,items);
+    alert('点单成功');
   };
-  localStorage.setItem("rooms",JSON.stringify(rooms));
-  location.reload();
+  card.appendChild(submit);
+  document.body.appendChild(card);
 }
 
-function showRoom(r){
-  if(!rooms[r]) return;
-  const d=document.getElementById("roomDetail");
-  d.classList.remove("hidden");
+/************** 老板端 **************/
+function admin(){
+  document.body.innerHTML='<h1>老板端</h1>';
 
-  const orderList=orders[r]||[];
-  let orderTotal=0;
-  orderList.forEach(o=>{
-    for(let id in o.cart){
-      const p=products.find(x=>x.id==id);
-      orderTotal+=p.price*o.cart[id];
-    }
+  /* 开台 */
+  const open=document.createElement('div'); open.className='card';
+  open.innerHTML='<h2>开台</h2>';
+  const rSel=sel(CONFIG.ROOMS);
+  const tSel=sel(Object.keys(CONFIG.ROOM_TYPES));
+  const price=inp(); const hours=inp(5); const over=inp(20);
+  const dis=sel(CONFIG.DISCOUNTS.map(d=>d.label));
+  const pay=sel(CONFIG.PAY_METHODS);
+
+  tSel.onchange=()=>price.value=CONFIG.ROOM_TYPES[tSel.value].price;
+  tSel.dispatchEvent(new Event('change'));
+
+  open.append(
+    row('包厢',rSel),row('类型',tSel),
+    row('基础价格',price),row('基础时长(h)',hours),
+    row('超时每小时',over),row('减免',dis),row('支付方式',pay)
+  );
+
+  const btn=document.createElement('button');
+  btn.textContent='确认开台';
+  btn.onclick=()=>{
+    if(DB.active(rSel.value))return alert('已开台');
+    Service.open({
+      room:rSel.value,type:tSel.value,
+      basePrice:+price.value,baseHours:+hours.value,
+      overPrice:+over.value,
+      discount:CONFIG.DISCOUNTS[dis.selectedIndex].value,
+      pay:pay.value,start:Date.now(),products:[]
+    });
+    location.reload();
+  };
+  open.appendChild(btn);
+  document.body.appendChild(open);
+
+  /* 包厢一览 */
+  const list=document.createElement('div'); list.className='card';
+  list.innerHTML='<h2>包厢一览</h2>';
+  const g=document.createElement('div'); g.className='grid';
+
+  CONFIG.ROOMS.forEach(r=>{
+    const b=document.createElement('button');
+    b.textContent='包厢 '+r;
+    if(!DB.active(r))b.disabled=true;
+    b.onclick=()=>detail(r);
+    g.appendChild(b);
   });
+  list.appendChild(g);
+  document.body.appendChild(list);
+}
 
+function detail(room){
+  const o=DB.active(room);
+  const b=Service.calc(o);
+  const d=document.createElement('div'); d.className='card';
   d.innerHTML=`
-  <h3>包厢 ${r}</h3>
-  <div>点单金额：¥${orderTotal}</div>
-  <button onclick="closeRoom(${r})">收工</button>
-  <button onclick="cancelRoom(${r})">撤销</button>`;
+    <h2>包厢 ${room}</h2>
+    <p>开台时间：${new Date(o.start).toLocaleString()}</p>
+    <p>剩余套餐：${Math.max(0,o.baseHours-(Date.now()-o.start)/3600000).toFixed(2)} h</p>
+    <p>商品数：${o.products.length}</p>
+    <h3>费用</h3>
+    <p>包厢：¥${b.roomFee}</p>
+    <p>商品：¥${b.productFee}</p>
+    <h3>合计：¥${b.total}</h3>
+  `;
+  const f=document.createElement('button');
+  f.textContent='收工';
+  f.onclick=()=>{Service.close(room,true);location.reload()};
+  const c=document.createElement('button');
+  c.className='secondary'; c.textContent='撤销';
+  c.onclick=()=>{Service.close(room,false);location.reload()};
+  d.append(f,c); document.body.appendChild(d);
 }
 
-function closeRoom(r){
-  delete rooms[r];
-  localStorage.setItem("rooms",JSON.stringify(rooms));
-  alert("已收工");
-  location.reload();
-}
-
-function cancelRoom(r){
-  delete rooms[r];
-  localStorage.setItem("rooms",JSON.stringify(rooms));
-  alert("已撤销");
-  location.reload();
-}
-
-/* ===== 启动 ===== */
-if(role==="admin"){
-  initAdmin();
-}else if(roomParam){
-  initClient(roomParam);
-}
+/************** 工具 **************/
+function sel(a){const s=document.createElement('select');a.forEach(v=>{const o=document.createElement('option');o.textContent=v;s.appendChild(o)});return s}
+function inp(v=''){const i=document.createElement('input');i.value=v;return i}
+function row(t,e){const r=document.createElement('div');r.className='row';r.innerHTML=`<span>${t}</span>`;r.appendChild(e);return r}
 </script>
-
 </body>
 </html>
