@@ -1,217 +1,122 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+<!DOCTYPE html><html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>棋牌室点单系统</title>
+  <title>棋牌室计时 + 点单系统（工程化迭代版）</title>
   <style>
     body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#111; color:#eee; margin:0; padding:16px; }
-    h1,h2 { margin-top:0; }
+    h1,h2,h3 { margin:8px 0; }
     .card { background:#1e1e1e; border-radius:8px; padding:16px; margin-bottom:16px; }
-    button { padding:8px 12px; margin:4px; border-radius:6px; border:none; background:#2d7cff; color:white; font-size:14px; }
+    .row { display:flex; justify-content:space-between; align-items:center; margin:6px 0; gap:8px; }
+    button { padding:8px 12px; border-radius:6px; border:none; background:#2d7cff; color:white; font-size:14px; cursor:pointer; }
     button.secondary { background:#555; }
     button.danger { background:#c0392b; }
-    button:disabled { opacity:0.5; }
-    .row { display:flex; justify-content:space-between; align-items:center; margin:6px 0; }
+    button:disabled { opacity:0.4; cursor:not-allowed; }
+    input, select { padding:6px; border-radius:4px; border:none; }
+    .grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; }
     .muted { color:#aaa; font-size:12px; }
-    input { padding:6px; border-radius:4px; border:none; }
   </style>
 </head>
 <body>
-
 <script>
 /**********************
- * 1. 核心配置（唯一真相源）
+ * 一、系统配置（未来可由后端下发）
  **********************/
 const CONFIG = {
-  ROOMS: ["A1", "A2", "B1", "B2"],
-  BASE_PRICE: 120,
-  BASE_HOURS: 4,
-  OVER_TIME_PRICE: 30,
+  ROOMS: Array.from({ length: 16 }, (_, i) => String(i + 1)),
+  ROOM_TYPES: {
+    small: { name: '小包', price: 40 },
+    medium: { name: '中包', price: 70 },
+    large: { name: '大包', price: 90 }
+  },
+  BASE_HOURS_DEFAULT: 5,
+  OVER_TIME_PRICE: 20,
+  DISCOUNTS: [
+    { label: '无减免', value: 0 },
+    { label: '熟人减免10元', value: 10 },
+    { label: '活动减免20元', value: 20 }
+  ],
+  PAY_METHODS: ['微信', '支付宝', '美团'],
   PRODUCTS: [
-    { id: "cola", name: "可乐", price: 5 },
-    { id: "water", name: "矿泉水", price: 3 },
-    { id: "snack", name: "零食", price: 10 }
+    { id: 'cola', name: '可乐', price: 5 },
+    { id: 'water', name: '矿泉水', price: 3 },
+    { id: 'snack', name: '零食', price: 10 }
   ]
-};
+};/**********************
+
+二、存储层（当前 localStorage，未来可整体替换为后端） **********************/ const DB = { active(room) { return JSON.parse(localStorage.getItem(active_${room})); }, saveActive(room, data) { localStorage.setItem(active_${room}, JSON.stringify(data)); }, clearActive(room) { localStorage.removeItem(active_${room}); }, history() { return JSON.parse(localStorage.getItem('history')) || []; }, saveHistory(list) { localStorage.setItem('history', JSON.stringify(list)); } };
+
 
 /**********************
- * 2. 存储层（只服务老板端）
- **********************/
-const STORAGE = {
-  status(room) {
-    return JSON.parse(localStorage.getItem(`room_status_${room}`));
-  },
-  saveStatus(room, data) {
-    localStorage.setItem(`room_status_${room}`, JSON.stringify(data));
-  },
-  clearStatus(room) {
-    localStorage.removeItem(`room_status_${room}`);
-  },
-  orders(room) {
-    return JSON.parse(localStorage.getItem(`orders_${room}`)) || [];
-  },
-  saveOrders(room, orders) {
-    localStorage.setItem(`orders_${room}`, JSON.stringify(orders));
-  }
-};
+
+三、业务逻辑层（不涉及 UI） **********************/ const Service = { openOrder(data) { DB.saveActive(data.room, data); },
+
+
+addProduct(room, product) { const order = DB.active(room); order.products.push({ ...product, time: Date.now() }); DB.saveActive(room, order); },
+
+calc(order) { const now = Date.now(); const usedHours = (now - order.startTime) / 3600000; const overtime = Math.max(0, Math.ceil(usedHours - order.baseHours)); const timeFee = order.basePrice + overtime * CONFIG.OVER_TIME_PRICE - order.discount; const productFee = order.products.reduce((s, p) => s + p.price, 0); return { timeFee, productFee, total: timeFee + productFee, overtime }; },
+
+close(room, isPaid) { const order = DB.active(room); const bill = Service.calc(order); const history = DB.history(); history.push({ ...order, bill, paid: isPaid, endTime: Date.now() }); DB.saveHistory(history); DB.clearActive(room); } };
 
 /**********************
- * 3. 业务层（纯逻辑，无 DOM）
- **********************/
-const Service = {
-  openRoom(room) {
-    if (STORAGE.status(room)) return false;
-    STORAGE.saveStatus(room, { room, startTime: Date.now(), items: [] });
-    STORAGE.saveOrders(room, []);
-    return true;
-  },
 
-  addItem(room, productId) {
-    const status = STORAGE.status(room);
-    if (!status) return;
-    const product = CONFIG.PRODUCTS.find(p => p.id === productId);
-    status.items.push({ ...product, time: Date.now() });
-    STORAGE.saveStatus(room, status);
-  },
+四、路由 **********************/ const params = new URLSearchParams(location.search); const room = params.get('room'); const role = params.get('role');
 
-  calcTotal(room) {
-    const status = STORAGE.status(room);
-    if (!status) return 0;
 
-    const now = Date.now();
-    const hours = (now - status.startTime) / 3600000;
-    const overtime = Math.max(0, hours - CONFIG.BASE_HOURS);
-
-    const timeFee = CONFIG.BASE_PRICE + Math.ceil(overtime) * CONFIG.OVER_TIME_PRICE;
-    const productFee = status.items.reduce((s, i) => s + i.price, 0);
-
-    return { timeFee, productFee, total: timeFee + productFee };
-  },
-
-  checkout(room) {
-    const bill = Service.calcTotal(room);
-    STORAGE.clearStatus(room);
-    return bill;
-  }
-};
+if (role === 'admin') initAdmin(); else if (room) initClient(room); else document.body.innerHTML = '<h2>无效访问</h2>';
 
 /**********************
- * 4. 路由（老板 / 客户）
- **********************/
-const params = new URLSearchParams(location.search);
-const room = params.get("room");
-const role = params.get("role");
 
-if (!room || !CONFIG.ROOMS.includes(room)) {
-  document.body.innerHTML = "<h2>无效房间</h2>";
-} else if (role === "admin") {
-  initAdmin(room);
-} else {
-  initClient(room);
-}
+五、客户端（点单端） **********************/ function initClient(room) { document.body.innerHTML = <h1>包厢 ${room} 点单</h1>; const order = DB.active(room); if (!order) { document.body.innerHTML += <p class="muted">包厢尚未开台</p>; return; }
 
-/**********************
- * 5. 客户端（只做 UI，不写状态）
- **********************/
-function initClient(room) {
-  const status = STORAGE.status(room);
-  document.body.innerHTML = `<h1>包厢 ${room}</h1>`;
 
-  if (!status) {
-    document.body.innerHTML += `<p class='muted'>包厢尚未开台，请联系老板</p>`;
-    return;
-  }
+const card = document.createElement('div'); card.className = 'card'; card.innerHTML = '<h2>选择商品</h2>';
 
-  const card = document.createElement("div");
-  card.className = "card";
-  card.innerHTML = `<h2>点单</h2>`;
+const selections = {};
 
-  CONFIG.PRODUCTS.forEach(p => {
-    const row = document.createElement("div");
-    row.className = "row";
-    row.innerHTML = `<span>${p.name} ¥${p.price}</span>`;
-    const btn = document.createElement("button");
-    btn.textContent = "添加";
-    btn.onclick = () => {
-      // 关键：客户端不直接写老板数据
-      alert("已通知老板加单：" + p.name);
-    };
-    row.appendChild(btn);
-    card.appendChild(row);
-  });
+CONFIG.PRODUCTS.forEach(p => { const row = document.createElement('div'); row.className = 'row'; row.innerHTML = <span>${p.name} ¥${p.price}</span>; const btn = document.createElement('button'); btn.textContent = '加入'; btn.onclick = () => { selections[p.id] = (selections[p.id] || 0) + 1; alert(${p.name} x${selections[p.id]}); }; row.appendChild(btn); card.appendChild(row); });
 
-  document.body.appendChild(card);
-}
+const submit = document.createElement('button'); submit.textContent = '提交点单（通知老板）'; submit.onclick = () => { alert('点单已提交，请等待老板确认'); };
+
+card.appendChild(submit); document.body.appendChild(card); }
 
 /**********************
- * 6. 老板端（唯一写数据者）
- **********************/
-function initAdmin(room) {
-  document.body.innerHTML = `<h1>老板端 - 包厢 ${room}</h1>`;
 
-  const wrap = document.createElement("div");
+六、老板端（核心管理端） **********************/ function initAdmin() { document.body.innerHTML = '<h1>老板端 · 包厢管理</h1>';
 
-  const status = STORAGE.status(room);
 
-  if (!status) {
-    const openBtn = document.createElement("button");
-    openBtn.textContent = "开台";
-    openBtn.onclick = () => { Service.openRoom(room); location.reload(); };
-    wrap.appendChild(openBtn);
-    document.body.appendChild(wrap);
-    return;
-  }
+// 开台 const openCard = document.createElement('div'); openCard.className = 'card'; openCard.innerHTML = '<h2>开台</h2>';
 
-  const bill = Service.calcTotal(room);
+const roomSel = select(CONFIG.ROOMS); const typeSel = select(Object.keys(CONFIG.ROOM_TYPES)); const priceInput = input(); const hourInput = input(CONFIG.BASE_HOURS_DEFAULT); const discountSel = select(CONFIG.DISCOUNTS.map(d => d.label)); const paySel = select(CONFIG.PAY_METHODS);
 
-  const info = document.createElement("div");
-  info.className = "card";
-  info.innerHTML = `
-    <h2>当前消费</h2>
-    <p>时间费用：¥${bill.timeFee}</p>
-    <p>商品费用：¥${bill.productFee}</p>
-    <h3>合计：¥${bill.total}</h3>
-  `;
+typeSel.onchange = () => priceInput.value = CONFIG.ROOM_TYPES[typeSel.value].price; typeSel.dispatchEvent(new Event('change'));
 
-  const products = document.createElement("div");
-  products.className = "card";
-  products.innerHTML = `<h2>加商品</h2>`;
+openCard.append( labelRow('包厢', roomSel), labelRow('类型', typeSel), labelRow('基础价格', priceInput), labelRow('基础时长(h)', hourInput), labelRow('减免', discountSel), labelRow('支付方式', paySel) );
 
-  CONFIG.PRODUCTS.forEach(p => {
-    const btn = document.createElement("button");
-    btn.textContent = p.name;
-    btn.onclick = () => { Service.addItem(room, p.id); location.reload(); };
-    products.appendChild(btn);
-  });
+const openBtn = document.createElement('button'); openBtn.textContent = '确认开台'; openBtn.onclick = () => { const room = roomSel.value; if (DB.active(room)) return alert('该包厢已开台'); Service.openOrder({ room, type: typeSel.value, basePrice: Number(priceInput.value), baseHours: Number(hourInput.value), discount: CONFIG.DISCOUNTS[discountSel.selectedIndex].value, payMethod: paySel.value, startTime: Date.now(), products: [] }); location.reload(); }; openCard.appendChild(openBtn); document.body.appendChild(openCard);
 
-  const actions = document.createElement("div");
-  actions.className = "card";
+// 包厢一览 const list = document.createElement('div'); list.className = 'card'; list.innerHTML = '<h2>包厢一览</h2>';
 
-  const checkoutBtn = document.createElement("button");
-  checkoutBtn.className = "danger";
-  checkoutBtn.textContent = "结账";
-  checkoutBtn.onclick = () => {
-    const b = Service.checkout(room);
-    alert(`结账完成：¥${b.total}`);
-    location.reload();
-  };
+const grid = document.createElement('div'); grid.className = 'grid';
 
-  const cancelBtn = document.createElement("button");
-  cancelBtn.className = "secondary";
-  cancelBtn.textContent = "撤销";
-  cancelBtn.onclick = () => { STORAGE.clearStatus(room); location.reload(); };
+CONFIG.ROOMS.forEach(r => { const btn = document.createElement('button'); btn.textContent = 包厢 ${r}; if (!DB.active(r)) btn.disabled = true; btn.onclick = () => showDetail(r); grid.appendChild(btn); });
 
-  actions.appendChild(checkoutBtn);
-  actions.appendChild(cancelBtn);
+list.appendChild(grid); document.body.appendChild(list); }
 
-  wrap.appendChild(info);
-  wrap.appendChild(products);
-  wrap.appendChild(actions);
+function showDetail(room) { const order = DB.active(room); const bill = Service.calc(order);
 
-  document.body.appendChild(wrap);
-}
-</script>
+const detail = document.createElement('div'); detail.className = 'card'; detail.innerHTML = <h2>包厢 ${room} 详情</h2> <p>开台时间：${new Date(order.startTime).toLocaleString()}</p> <p>剩余套餐时长：${Math.max(0, order.baseHours - ((Date.now()-order.startTime)/3600000)).toFixed(2)} h</p> <p>商品数：${order.products.length}</p> <h3>费用</h3> <p>包厢费用：¥${bill.timeFee}</p> <p>商品费用：¥${bill.productFee}</p> <h3>合计：¥${bill.total}</h3>;
+
+const finish = document.createElement('button'); finish.textContent = '收工（已结账）'; finish.onclick = () => { Service.close(room, true); location.reload(); };
+
+const cancel = document.createElement('button'); cancel.className = 'secondary'; cancel.textContent = '撤销（未结账）'; cancel.onclick = () => { Service.close(room, false); location.reload(); };
+
+detail.append(finish, cancel); document.body.appendChild(detail); }
+
+/**********************
+
+工具函数 **********************/ function select(arr) { const s = document.createElement('select'); arr.forEach(v => { const o = document.createElement('option'); o.textContent = v; s.appendChild(o); }); return s; } function input(v='') { const i = document.createElement('input'); i.value = v; return i; } function labelRow(label, el) { const row = document.createElement('div'); row.className = 'row'; row.innerHTML = <span>${label}</span>; row.appendChild(el); return row; } </script>
+
 
 </body>
 </html>
