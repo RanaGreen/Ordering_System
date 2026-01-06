@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>棋牌室计时 + 点单系统</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
@@ -13,51 +13,42 @@ body {
   color: #eee;
 }
 
-h1, h2, h3 {
-  margin: 10px 0;
-}
-
 .hidden { display: none; }
 
-/* ===== 通用容器 ===== */
-.container {
-  padding: 15px;
-  padding-bottom: 140px;
+h2 { margin-top: 0; }
+
+button {
+  cursor: pointer;
 }
 
-/* ===== 商品区 ===== */
+/* ===== 公共 ===== */
+.container {
+  padding: 15px;
+}
+
+/* ===== 客户端 ===== */
 .products {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
 }
 
-.product-card {
+.product {
   background: #1f1f1f;
   border-radius: 10px;
   padding: 12px;
   text-align: center;
 }
 
-.product-name {
-  font-size: 15px;
-  margin-bottom: 6px;
-}
-
-.product-price {
-  font-size: 14px;
-  color: #aaa;
-  margin-bottom: 10px;
-}
+.product-name { font-size: 15px; }
+.product-price { color: #aaa; margin: 6px 0; }
 
 .add-btn {
   background: #2ecc71;
   border: none;
-  border-radius: 6px;
   padding: 6px 12px;
-  color: #000;
+  border-radius: 6px;
   font-size: 16px;
-  cursor: pointer;
 }
 
 /* ===== 购物车 ===== */
@@ -68,205 +59,266 @@ h1, h2, h3 {
   right: 0;
   background: #1a1a1a;
   border-top: 1px solid #333;
-  padding: 10px 12px;
-}
-
-.cart-header {
-  font-size: 14px;
-  color: #aaa;
-  margin-bottom: 6px;
+  padding: 10px;
 }
 
 .cart-items {
-  max-height: 80px;
+  max-height: 90px;
   overflow-y: auto;
+  font-size: 14px;
 }
 
 .cart-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   margin-bottom: 4px;
-  font-size: 14px;
-}
-
-.cart-item span {
-  flex: 1;
-}
-
-.cart-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.cart-btn {
-  background: #444;
-  border: none;
-  border-radius: 4px;
-  color: #fff;
-  width: 26px;
-  height: 26px;
-  font-size: 16px;
 }
 
 .cart-total {
+  text-align: right;
   margin-top: 6px;
   font-size: 16px;
-  text-align: right;
 }
 
 .submit-btn {
   width: 100%;
   margin-top: 8px;
+  padding: 10px;
   background: #3498db;
   border: none;
   border-radius: 8px;
-  padding: 10px;
   font-size: 16px;
   color: #fff;
 }
 
-/* ===== 老板端基础样式（未动） ===== */
-.admin {
-  padding: 15px;
-}
+/* ===== 老板端 ===== */
 .room-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
+
 .room-btn {
   padding: 10px;
+  border-radius: 6px;
   background: #333;
   border: none;
   color: #fff;
-  border-radius: 6px;
 }
+
 .room-btn.active {
   background: #27ae60;
+}
+
+.panel {
+  background: #1f1f1f;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+input, select {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  border: none;
 }
 </style>
 </head>
 
 <body>
 
+<!-- ===== 客户端 ===== -->
 <div id="client" class="container hidden">
   <h2>包厢 <span id="roomLabel"></span> 点单</h2>
-
   <div class="products" id="productList"></div>
 </div>
 
-<div class="cart hidden" id="cart">
-  <div class="cart-header">购物车（包厢 <span id="cartRoom"></span>）</div>
+<div id="cart" class="cart hidden">
+  <div>购物车</div>
   <div class="cart-items" id="cartItems"></div>
-  <div class="cart-total">合计：¥ <span id="cartTotal">0</span></div>
+  <div class="cart-total">合计 ¥<span id="cartTotal">0</span></div>
   <button class="submit-btn" onclick="submitOrder()">提交点单</button>
 </div>
 
-<div id="admin" class="admin hidden">
+<!-- ===== 老板端 ===== -->
+<div id="admin" class="container hidden">
   <h2>老板端</h2>
-  <p>（功能保持不变，略）</p>
+
+  <button onclick="showOpen()">➕ 开台</button>
+
+  <div class="panel hidden" id="openPanel">
+    <div>包厢号</div>
+    <select id="openRoom"></select>
+
+    <div>基础价格</div>
+    <input id="basePrice" type="number" value="70">
+
+    <div>基础时长（小时）</div>
+    <input id="baseHours" type="number" value="5">
+
+    <div>超时每小时费用</div>
+    <input id="extraPrice" type="number" value="20">
+
+    <button onclick="confirmOpen()">确认开台</button>
+  </div>
+
+  <h3>包厢一览</h3>
+  <div class="room-grid" id="roomGrid"></div>
+
+  <div class="panel hidden" id="roomDetail"></div>
 </div>
 
 <script>
+/* ===== 基础数据 ===== */
 const params = new URLSearchParams(location.search);
-const room = params.get("room");
+const roomParam = params.get("room");
 const role = params.get("role");
 
 const products = [
-  { id: 1, name: "矿泉水", price: 3 },
-  { id: 2, name: "可乐", price: 5 },
-  { id: 3, name: "红牛", price: 8 },
-  { id: 4, name: "泡面", price: 6 },
-  { id: 5, name: "瓜子", price: 10 }
+  {id:1,name:"矿泉水",price:3},
+  {id:2,name:"可乐",price:5},
+  {id:3,name:"红牛",price:8},
+  {id:4,name:"泡面",price:6},
+  {id:5,name:"瓜子",price:10},
 ];
 
 let cart = {};
+let rooms = JSON.parse(localStorage.getItem("rooms")||"{}");
+let orders = JSON.parse(localStorage.getItem("orders")||"{}");
 
-function initClient() {
+/* ===== 客户端 ===== */
+function initClient(room) {
   document.getElementById("client").classList.remove("hidden");
   document.getElementById("cart").classList.remove("hidden");
   document.getElementById("roomLabel").innerText = room;
-  document.getElementById("cartRoom").innerText = room;
 
   const list = document.getElementById("productList");
-  products.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "product-card";
-    div.innerHTML = `
-      <div class="product-name">${p.name}</div>
-      <div class="product-price">¥${p.price}</div>
-      <button class="add-btn" onclick="addToCart(${p.id})">＋</button>
-    `;
-    list.appendChild(div);
+  products.forEach(p=>{
+    const d=document.createElement("div");
+    d.className="product";
+    d.innerHTML=`<div class="product-name">${p.name}</div>
+    <div class="product-price">¥${p.price}</div>
+    <button class="add-btn" onclick="add(${p.id})">＋</button>`;
+    list.appendChild(d);
   });
+}
 
+function add(id){
+  cart[id]=(cart[id]||0)+1;
   renderCart();
 }
 
-function addToCart(id) {
-  if (!cart[id]) cart[id] = 0;
-  cart[id]++;
-  renderCart();
-}
-
-function removeFromCart(id) {
-  if (!cart[id]) return;
+function remove(id){
   cart[id]--;
-  if (cart[id] <= 0) delete cart[id];
+  if(cart[id]<=0) delete cart[id];
   renderCart();
 }
 
-function renderCart() {
-  const itemsDiv = document.getElementById("cartItems");
-  itemsDiv.innerHTML = "";
-  let total = 0;
-
-  for (let id in cart) {
-    const p = products.find(x => x.id == id);
-    const qty = cart[id];
-    const sub = p.price * qty;
-    total += sub;
-
-    const row = document.createElement("div");
-    row.className = "cart-item";
-    row.innerHTML = `
-      <span>${p.name} × ${qty}</span>
-      <div class="cart-controls">
-        <span>¥${sub}</span>
-        <button class="cart-btn" onclick="removeFromCart(${id})">－</button>
-      </div>
-    `;
-    itemsDiv.appendChild(row);
+function renderCart(){
+  const box=document.getElementById("cartItems");
+  box.innerHTML="";
+  let total=0;
+  for(let id in cart){
+    const p=products.find(x=>x.id==id);
+    const sub=p.price*cart[id];
+    total+=sub;
+    const r=document.createElement("div");
+    r.className="cart-item";
+    r.innerHTML=`${p.name}×${cart[id]} ¥${sub}
+    <button onclick="remove(${id})">－</button>`;
+    box.appendChild(r);
   }
-
-  document.getElementById("cartTotal").innerText = total;
+  document.getElementById("cartTotal").innerText=total;
 }
 
-function submitOrder() {
-  if (Object.keys(cart).length === 0) {
-    alert("购物车为空");
-    return;
-  }
-
-  const orders = JSON.parse(localStorage.getItem("orders") || "{}");
-  if (!orders[room]) orders[room] = [];
-  orders[room].push({
-    time: new Date().toLocaleString(),
-    items: JSON.parse(JSON.stringify(cart))
-  });
-
-  localStorage.setItem("orders", JSON.stringify(orders));
-  cart = {};
+function submitOrder(){
+  if(!orders[roomParam]) orders[roomParam]=[];
+  orders[roomParam].push({time:new Date().toLocaleString(),cart});
+  localStorage.setItem("orders",JSON.stringify(orders));
+  cart={};
   renderCart();
   alert("点单已提交");
 }
 
-if (role === "admin") {
+/* ===== 老板端 ===== */
+function initAdmin(){
   document.getElementById("admin").classList.remove("hidden");
-} else if (room) {
-  initClient();
+
+  const grid=document.getElementById("roomGrid");
+  const select=document.getElementById("openRoom");
+
+  for(let i=1;i<=16;i++){
+    const b=document.createElement("button");
+    b.className="room-btn"+(rooms[i]?" active":"");
+    b.innerText="包厢 "+i;
+    b.onclick=()=>showRoom(i);
+    grid.appendChild(b);
+
+    const o=document.createElement("option");
+    o.value=i;
+    o.innerText=i;
+    select.appendChild(o);
+  }
+}
+
+function showOpen(){
+  document.getElementById("openPanel").classList.toggle("hidden");
+}
+
+function confirmOpen(){
+  const r=openRoom.value;
+  rooms[r]={
+    start:Date.now(),
+    base:basePrice.value,
+    hours:baseHours.value,
+    extra:extraPrice.value
+  };
+  localStorage.setItem("rooms",JSON.stringify(rooms));
+  location.reload();
+}
+
+function showRoom(r){
+  if(!rooms[r]) return;
+  const d=document.getElementById("roomDetail");
+  d.classList.remove("hidden");
+
+  const orderList=orders[r]||[];
+  let orderTotal=0;
+  orderList.forEach(o=>{
+    for(let id in o.cart){
+      const p=products.find(x=>x.id==id);
+      orderTotal+=p.price*o.cart[id];
+    }
+  });
+
+  d.innerHTML=`
+  <h3>包厢 ${r}</h3>
+  <div>点单金额：¥${orderTotal}</div>
+  <button onclick="closeRoom(${r})">收工</button>
+  <button onclick="cancelRoom(${r})">撤销</button>`;
+}
+
+function closeRoom(r){
+  delete rooms[r];
+  localStorage.setItem("rooms",JSON.stringify(rooms));
+  alert("已收工");
+  location.reload();
+}
+
+function cancelRoom(r){
+  delete rooms[r];
+  localStorage.setItem("rooms",JSON.stringify(rooms));
+  alert("已撤销");
+  location.reload();
+}
+
+/* ===== 启动 ===== */
+if(role==="admin"){
+  initAdmin();
+}else if(roomParam){
+  initClient(roomParam);
 }
 </script>
 
